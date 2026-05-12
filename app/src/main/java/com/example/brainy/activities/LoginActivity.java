@@ -2,9 +2,12 @@ package com.example.brainy.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityOptionsCompat;
 
 import com.example.brainy.R;
 import com.example.brainy.api.ApiClient;
@@ -37,11 +40,23 @@ public class LoginActivity extends AppCompatActivity {
 
         apiService = ApiClient.getApiService();
 
+        // Animación de entrada para los elementos del login
+        Animation fadeIn = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+        etUsername.startAnimation(fadeIn);
+        etPassword.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        btnLogin.startAnimation(AnimationUtils.loadAnimation(this, R.anim.scale_in));
+        btnGoToRegister.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+
         btnLogin.setOnClickListener(v -> login());
 
         btnGoToRegister.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
-            startActivity(intent);
+            ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
+                    LoginActivity.this,
+                    R.anim.slide_left,
+                    R.anim.fade_out
+            );
+            startActivity(intent, options.toBundle());
         });
     }
 
@@ -69,10 +84,11 @@ public class LoginActivity extends AppCompatActivity {
 
                 if (response.isSuccessful()) {
                     Toast.makeText(LoginActivity.this, "Sesión iniciada", Toast.LENGTH_SHORT).show();
-                    // Navegar al MainActivity
+                    // Navegar al MainActivity con animación
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
+                    overridePendingTransition(R.anim.slide_left, R.anim.fade_out);
                     finish();
                 } else {
                     Toast.makeText(LoginActivity.this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show();

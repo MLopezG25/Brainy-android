@@ -1,5 +1,7 @@
 package com.example.brainy.activities;
 
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -7,9 +9,12 @@ import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityOptionsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -67,13 +72,36 @@ public class MainActivity extends AppCompatActivity {
         adapter = new EntryAdapter(entries, entry -> {
             Intent intent = new Intent(MainActivity.this, EntryDetailActivity.class);
             intent.putExtra("entry_id", entry.getId());
-            startActivity(intent);
+            // Animación de transición con fade
+            ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
+                    MainActivity.this,
+                    R.anim.slide_left,
+                    R.anim.fade_out
+            );
+            startActivity(intent, options.toBundle());
         });
         rvEntries.setAdapter(adapter);
 
+        // Animación de entrada para el FAB (aparece con escala)
+        Animation fabAnim = AnimationUtils.loadAnimation(this, R.anim.fab_scale_up);
+        fabAdd.startAnimation(fabAnim);
+
         fabAdd.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, EntryFormActivity.class);
-            startActivity(intent);
+            // Animación de press en el FAB
+            AnimatorSet pressAnim = (AnimatorSet) AnimatorInflater.loadAnimator(
+                    MainActivity.this, R.animator.fab_press_anim);
+            pressAnim.setTarget(fabAdd);
+            pressAnim.start();
+
+            fabAdd.postDelayed(() -> {
+                Intent intent = new Intent(MainActivity.this, EntryFormActivity.class);
+                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
+                        MainActivity.this,
+                        R.anim.slide_up,
+                        R.anim.fade_out
+                );
+                startActivity(intent, options.toBundle());
+            }, 150);
         });
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
@@ -83,10 +111,22 @@ public class MainActivity extends AppCompatActivity {
             if (itemId == R.id.nav_hub) {
                 return true;
             } else if (itemId == R.id.nav_add) {
-                startActivity(new Intent(MainActivity.this, EntryFormActivity.class));
+                Intent intent = new Intent(MainActivity.this, EntryFormActivity.class);
+                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
+                        MainActivity.this,
+                        R.anim.slide_up,
+                        R.anim.fade_out
+                );
+                startActivity(intent, options.toBundle());
                 return true;
             } else if (itemId == R.id.nav_profile) {
-                startActivity(new Intent(MainActivity.this, ProfileActivity.class));
+                Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
+                        MainActivity.this,
+                        R.anim.slide_left,
+                        R.anim.fade_out
+                );
+                startActivity(intent, options.toBundle());
                 finish();
                 return true;
             }

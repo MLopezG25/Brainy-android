@@ -1,6 +1,7 @@
 package com.example.brainy.activities;
 
 import android.os.Bundle;
+import android.view.animation.AnimationUtils;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,6 +44,15 @@ public class EntryDetailActivity extends AppCompatActivity {
         }
     }
 
+    private void animateViewsIn() {
+        tvTitle.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        chipCategory.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        chipSubcategory.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        chipStatus.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        chipTags.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        tvNotes.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+    }
+
     private void loadEntry(int entryId) {
         apiService.getEntry(entryId).enqueue(new Callback<Entry>() {
             @Override
@@ -77,6 +87,9 @@ public class EntryDetailActivity extends AppCompatActivity {
                     if (entry.getDescription() != null && !entry.getDescription().isEmpty()) {
                         tvNotes.setText(entry.getDescription());
                     }
+
+                    // Animar la entrada de los elementos
+                    animateViewsIn();
                 }
             }
 

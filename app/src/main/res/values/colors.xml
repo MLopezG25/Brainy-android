@@ -3,7 +3,7 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- Golden Yellow Palette for Material 3 -->
+    <!-- Dorado for Material 3 -->
     <color name="golden_primary">#FFD700</color>
     <color name="golden_primary_light">#FFF8E0</color>
     <color name="golden_primary_dark">#B8960A</color>

@@ -1,8 +1,12 @@
 package com.example.brainy.adapters;
 
+import android.animation.AnimatorSet;
+
+import android.animation.ObjectAnimator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,6 +21,7 @@ public class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHol
 
     private List<Entry> entries;
     private OnEntryClickListener listener;
+    private int lastAnimatedPosition = -1;
 
     public interface OnEntryClickListener {
         void onEntryClick(Entry entry);
@@ -39,6 +44,7 @@ public class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHol
     public void onBindViewHolder(@NonNull EntryViewHolder holder, int position) {
         Entry entry = entries.get(position);
         holder.bind(entry, listener);
+        animateItem(holder.itemView, position);
     }
 
     @Override
@@ -48,7 +54,42 @@ public class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHol
 
     public void updateEntries(List<Entry> newEntries) {
         this.entries = newEntries;
+        lastAnimatedPosition = -1; // Resetear para que se vuelvan a animar
         notifyDataSetChanged();
+    }
+
+    private void animateItem(View view, int position) {
+        // Solo animar si no se ha animado antes esta posición
+        if (position <= lastAnimatedPosition) {
+            return;
+        }
+        lastAnimatedPosition = position;
+
+        // Configurar estado inicial (invisible y escalado)
+        view.setAlpha(0f);
+        view.setScaleX(0.8f);
+        view.setScaleY(0.8f);
+        view.setTranslationY(60f);
+
+        // Crear animaciones
+        ObjectAnimator fadeIn = ObjectAnimator.ofFloat(view, "alpha", 0f, 1f);
+        fadeIn.setDuration(350);
+
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(view, "scaleX", 0.8f, 1f);
+        scaleX.setDuration(350);
+
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(view, "scaleY", 0.8f, 1f);
+        scaleY.setDuration(350);
+
+        ObjectAnimator slideUp = ObjectAnimator.ofFloat(view, "translationY", 60f, 0f);
+        slideUp.setDuration(350);
+
+        // Agrupar animaciones
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.playTogether(fadeIn, scaleX, scaleY, slideUp);
+        animatorSet.setInterpolator(new AccelerateDecelerateInterpolator());
+        animatorSet.setStartDelay(position * 80L); // Retraso escalonado: 80ms por item
+        animatorSet.start();
     }
 
     static class EntryViewHolder extends RecyclerView.ViewHolder {

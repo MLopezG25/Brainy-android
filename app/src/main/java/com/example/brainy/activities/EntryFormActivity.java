@@ -2,11 +2,14 @@ package com.example.brainy.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityOptionsCompat;
 
 import com.example.brainy.R;
 import com.example.brainy.api.ApiClient;
@@ -50,6 +53,14 @@ public class EntryFormActivity extends AppCompatActivity {
 
         apiService = ApiClient.getApiService();
 
+        // Animaciones de entrada para los campos del formulario
+        etTitle.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        autoCompleteCategory.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        autoCompleteSubcategory.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        autoCompleteStatus.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        etNotes.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        btnSave.startAnimation(AnimationUtils.loadAnimation(this, R.anim.scale_in));
+
         setupStatusDropdown();
         loadCategories();
 
@@ -62,11 +73,23 @@ public class EntryFormActivity extends AppCompatActivity {
             if (itemId == R.id.nav_add) {
                 return true;
             } else if (itemId == R.id.nav_hub) {
-                startActivity(new Intent(EntryFormActivity.this, MainActivity.class));
+                Intent intent = new Intent(EntryFormActivity.this, MainActivity.class);
+                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
+                        EntryFormActivity.this,
+                        R.anim.slide_right,
+                        R.anim.fade_out
+                );
+                startActivity(intent, options.toBundle());
                 finish();
                 return true;
             } else if (itemId == R.id.nav_profile) {
-                startActivity(new Intent(EntryFormActivity.this, ProfileActivity.class));
+                Intent intent = new Intent(EntryFormActivity.this, ProfileActivity.class);
+                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
+                        EntryFormActivity.this,
+                        R.anim.slide_left,
+                        R.anim.fade_out
+                );
+                startActivity(intent, options.toBundle());
                 finish();
                 return true;
             }

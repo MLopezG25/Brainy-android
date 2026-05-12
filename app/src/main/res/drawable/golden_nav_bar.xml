@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Fondo blanco/crema base -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFF8F0" />
+        </shape>
+    </item>
+    <!-- Degradado dorado que cubre toda la barra desde abajo -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#00FFD700"
+                android:endColor="#40FFD700"
+                android:angle="270" />
+        </shape>
+    </item>
+</layer-list>

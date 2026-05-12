@@ -3,10 +3,13 @@ package com.example.brainy.activities;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityOptionsCompat;
 
 import com.example.brainy.R;
 import com.example.brainy.api.ApiClient;
@@ -43,6 +46,7 @@ public class ProfileActivity extends AppCompatActivity {
         apiService = ApiClient.getApiService();
 
         MaterialButton buttonLogout = findViewById(R.id.button_logout);
+        buttonLogout.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
         buttonLogout.setOnClickListener(v -> logout());
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
@@ -52,11 +56,23 @@ public class ProfileActivity extends AppCompatActivity {
             if (itemId == R.id.nav_profile) {
                 return true;
             } else if (itemId == R.id.nav_hub) {
-                startActivity(new Intent(ProfileActivity.this, MainActivity.class));
+                Intent intent = new Intent(ProfileActivity.this, MainActivity.class);
+                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
+                        ProfileActivity.this,
+                        R.anim.slide_right,
+                        R.anim.fade_out
+                );
+                startActivity(intent, options.toBundle());
                 finish();
                 return true;
             } else if (itemId == R.id.nav_add) {
-                startActivity(new Intent(ProfileActivity.this, EntryFormActivity.class));
+                Intent intent = new Intent(ProfileActivity.this, EntryFormActivity.class);
+                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
+                        ProfileActivity.this,
+                        R.anim.slide_up,
+                        R.anim.fade_out
+                );
+                startActivity(intent, options.toBundle());
                 return true;
             }
             return false;
@@ -117,6 +133,7 @@ public class ProfileActivity extends AppCompatActivity {
         Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
+        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
         finish();
     }
 }

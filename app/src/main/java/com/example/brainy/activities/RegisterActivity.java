@@ -2,9 +2,12 @@ package com.example.brainy.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityOptionsCompat;
 
 import com.example.brainy.R;
 import com.example.brainy.api.ApiClient;
@@ -38,9 +41,19 @@ public class RegisterActivity extends AppCompatActivity {
 
         apiService = ApiClient.getApiService();
 
+        // Animaciones de entrada
+        etUsername.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        etEmail.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        etPassword.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        btnRegister.startAnimation(AnimationUtils.loadAnimation(this, R.anim.scale_in));
+        btnGoToLogin.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+
         btnRegister.setOnClickListener(v -> register());
 
-        btnGoToLogin.setOnClickListener(v -> finish());
+        btnGoToLogin.setOnClickListener(v -> {
+            finish();
+            overridePendingTransition(R.anim.slide_right, R.anim.fade_out);
+        });
     }
 
     private void register() {
@@ -69,7 +82,8 @@ public class RegisterActivity extends AppCompatActivity {
 
                 if (response.isSuccessful()) {
                     Toast.makeText(RegisterActivity.this, "Cuenta creada correctamente", Toast.LENGTH_SHORT).show();
-                    finish(); // Volver al login
+                    finish();
+                    overridePendingTransition(R.anim.slide_right, R.anim.fade_out);
                 } else {
                     String error = "Error al registrarse";
                     if (response.body() != null && response.body().containsKey("error")) {
