@@ -19,6 +19,7 @@ import com.example.brainy.api.ApiClient;
 import com.example.brainy.api.ApiService;
 import com.example.brainy.api.models.Category;
 import com.example.brainy.api.models.Entry;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -73,6 +74,23 @@ public class MainActivity extends AppCompatActivity {
         fabAdd.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, EntryFormActivity.class);
             startActivity(intent);
+        });
+
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        bottomNav.setSelectedItemId(R.id.nav_hub);
+        bottomNav.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_hub) {
+                return true;
+            } else if (itemId == R.id.nav_add) {
+                startActivity(new Intent(MainActivity.this, EntryFormActivity.class));
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                startActivity(new Intent(MainActivity.this, ProfileActivity.class));
+                finish();
+                return true;
+            }
+            return false;
         });
 
         etSearch.addTextChangedListener(new TextWatcher() {
