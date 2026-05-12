@@ -1,5 +1,6 @@
 package com.example.brainy.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -13,6 +14,7 @@ import com.example.brainy.api.ApiService;
 import com.example.brainy.api.models.Category;
 import com.example.brainy.api.models.Entry;
 import com.example.brainy.api.models.Subcategory;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -52,6 +54,24 @@ public class EntryFormActivity extends AppCompatActivity {
         loadCategories();
 
         btnSave.setOnClickListener(v -> saveEntry());
+
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        bottomNav.setSelectedItemId(R.id.nav_add);
+        bottomNav.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_add) {
+                return true;
+            } else if (itemId == R.id.nav_hub) {
+                startActivity(new Intent(EntryFormActivity.this, MainActivity.class));
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_profile) {
+                startActivity(new Intent(EntryFormActivity.this, ProfileActivity.class));
+                finish();
+                return true;
+            }
+            return false;
+        });
 
         if (getIntent().hasExtra("entry_id")) {
             editingEntryId = getIntent().getIntExtra("entry_id", -1);
