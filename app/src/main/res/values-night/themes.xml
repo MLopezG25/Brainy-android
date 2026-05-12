@@ -1,7 +1,44 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Base.Theme.Brainy" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <!-- Primario -->
+        <item name="colorPrimary">@color/golden_dark_primary</item>
+        <item name="colorOnPrimary">@color/golden_dark_on_primary</item>
+        <item name="colorPrimaryContainer">@color/golden_primary_dark</item>
+        <item name="colorOnPrimaryContainer">@color/golden_primary_light</item>
+
+        <!-- Secundario -->
+        <item name="colorSecondary">@color/golden_dark_secondary</item>
+        <item name="colorOnSecondary">@color/golden_dark_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/golden_secondary_dark</item>
+        <item name="colorOnSecondaryContainer">@color/golden_secondary_light</item>
+
+        <!-- Terciario -->
+        <item name="colorTertiary">@color/golden_dark_tertiary</item>
+        <item name="colorOnTertiary">@color/golden_dark_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/golden_tertiary_dark</item>
+        <item name="colorOnTertiaryContainer">@color/golden_tertiary_light</item>
+
+        <!-- Error -->
+        <item name="colorError">@color/golden_dark_error</item>
+        <item name="colorOnError">@color/golden_dark_on_error</item>
+
+        <!-- Fondo -->
+        <item name="android:colorBackground">@color/golden_dark_background</item>
+        <item name="colorOnBackground">@color/golden_dark_on_background</item>
+
+        <!-- Surface -->
+        <item name="colorSurface">@color/golden_dark_surface</item>
+        <item name="colorOnSurface">@color/golden_dark_on_surface</item>
+        <item name="colorSurfaceVariant">@color/golden_dark_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/golden_dark_on_surface_variant</item>
+
+        <!-- Outline -->
+        <item name="colorOutline">@color/golden_dark_outline</item>
+        <item name="colorOutlineVariant">@color/golden_surface_variant</item>
+
+        <!-- Inverse -->
+        <item name="colorSurfaceInverse">@color/golden_dark_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/golden_dark_inverse_on_surface</item>
+        <item name="colorPrimaryInverse">@color/golden_dark_inverse_primary</item>
     </style>
 </resources>
