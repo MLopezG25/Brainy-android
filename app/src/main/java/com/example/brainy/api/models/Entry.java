@@ -3,6 +3,7 @@ package com.example.brainy.api.models;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
+import java.util.Map;
 
 public class Entry {
 
@@ -41,6 +42,9 @@ public class Entry {
 
     @SerializedName("updated_at")
     private String updatedAt;
+
+    @SerializedName("field_values")
+    private List<Map<String, Object>> fieldValues;
 
     public Entry() {}
 
@@ -139,6 +143,14 @@ public class Entry {
 
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public List<Map<String, Object>> getFieldValues() {
+        return fieldValues;
+    }
+
+    public void setFieldValues(List<Map<String, Object>> fieldValues) {
+        this.fieldValues = fieldValues;
     }
 
     public String getStatusDisplay() {

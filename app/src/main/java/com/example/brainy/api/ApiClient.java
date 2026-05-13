@@ -12,20 +12,34 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ApiClient {
 
-    private static final String BASE_URL = "http://10.0.2.2:8000/";
+    // Lista de posibles IPs del backend (casa, trabajo, ADB Reverse)
+    // La app probará cada una hasta encontrar la que funcione
+    private static final String[] POSIBLE_URLS = {
+            "http://192.168.1.57:8000/",   // Casa (WiFi)
+            "http://10.89.255.149:8000/",  // Trabajo (WiFi)
+            "http://10.127.200.164:8000/", // Trabajo (Ethernet)
+            "http://127.0.0.1:8000/",      // ADB Reverse (USB)
+    };
 
     private static Retrofit retrofit = null;
     private static OkHttpClient httpClient = null;
+    private static String activeBaseUrl = null;
+    private static int currentUrlIndex = 0;
 
     public static Retrofit getClient() {
         if (retrofit == null) {
-            retrofit = new Retrofit.Builder()
-                    .baseUrl(BASE_URL)
-                    .client(getHttpClient())
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build();
+            activeBaseUrl = POSIBLE_URLS[currentUrlIndex];
+            retrofit = buildRetrofit(activeBaseUrl);
         }
         return retrofit;
+    }
+
+    private static Retrofit buildRetrofit(String baseUrl) {
+        return new Retrofit.Builder()
+                .baseUrl(baseUrl)
+                .client(getHttpClient())
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
     }
 
     public static OkHttpClient getHttpClient() {
@@ -39,7 +53,7 @@ public class ApiClient {
             httpClient = new OkHttpClient.Builder()
                     .cookieJar(new JavaNetCookieJar(cookieManager))
                     .addInterceptor(logging)
-                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .connectTimeout(5, TimeUnit.SECONDS)
                     .readTimeout(30, TimeUnit.SECONDS)
                     .writeTimeout(30, TimeUnit.SECONDS)
                     .build();
@@ -49,5 +63,39 @@ public class ApiClient {
 
     public static ApiService getApiService() {
         return getClient().create(ApiService.class);
+    }
+
+    /**
+     * Cambia a la siguiente IP disponible cuando falla la conexión.
+     * Se llama automáticamente desde los callbacks onFailure.
+     * @return true si hay más IPs para probar, false si ya no quedan
+     */
+    public static synchronized boolean switchToNextUrl() {
+        currentUrlIndex++;
+        if (currentUrlIndex < POSIBLE_URLS.length) {
+            activeBaseUrl = POSIBLE_URLS[currentUrlIndex];
+            retrofit = buildRetrofit(activeBaseUrl);
+            android.util.Log.d("API_CLIENT", "Cambiando a: " + activeBaseUrl);
+            return true;
+        }
+        // Volver al inicio para el próximo intento
+        currentUrlIndex = 0;
+        activeBaseUrl = POSIBLE_URLS[0];
+        retrofit = buildRetrofit(activeBaseUrl);
+        android.util.Log.d("API_CLIENT", "No hay más IPs, volviendo a: " + activeBaseUrl);
+        return false;
+    }
+
+    /**
+     * Reinicia el índice de IPs para empezar desde la primera
+     */
+    public static void resetUrlIndex() {
+        currentUrlIndex = 0;
+        activeBaseUrl = POSIBLE_URLS[0];
+        retrofit = buildRetrofit(activeBaseUrl);
+    }
+
+    public static String getActiveBaseUrl() {
+        return activeBaseUrl;
     }
 }

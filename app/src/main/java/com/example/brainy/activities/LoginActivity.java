@@ -97,9 +97,14 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                btnLogin.setEnabled(true);
-                btnLogin.setText("Iniciar sesión");
-                Toast.makeText(LoginActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                if (ApiClient.switchToNextUrl()) {
+                    apiService = ApiClient.getApiService();
+                    login();
+                } else {
+                    btnLogin.setEnabled(true);
+                    btnLogin.setText("Iniciar sesión");
+                    Toast.makeText(LoginActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }

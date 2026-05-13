@@ -53,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Integer selectedCategoryId = null;
     private String selectedStatus = null;
+    private boolean isInitializing = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +73,6 @@ public class MainActivity extends AppCompatActivity {
         adapter = new EntryAdapter(entries, entry -> {
             Intent intent = new Intent(MainActivity.this, EntryDetailActivity.class);
             intent.putExtra("entry_id", entry.getId());
-            // Animación de transición con fade
             ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
                     MainActivity.this,
                     R.anim.slide_left,
@@ -82,12 +82,11 @@ public class MainActivity extends AppCompatActivity {
         });
         rvEntries.setAdapter(adapter);
 
-        // Animación de entrada para el FAB (aparece con escala)
+        // Animación de entrada para el FAB
         Animation fabAnim = AnimationUtils.loadAnimation(this, R.anim.fab_scale_up);
         fabAdd.startAnimation(fabAnim);
 
         fabAdd.setOnClickListener(v -> {
-            // Animación de press en el FAB
             AnimatorSet pressAnim = (AnimatorSet) AnimatorInflater.loadAnimator(
                     MainActivity.this, R.animator.fab_press_anim);
             pressAnim.setTarget(fabAdd);
@@ -133,12 +132,14 @@ public class MainActivity extends AppCompatActivity {
             return false;
         });
 
+        // TextWatcher para búsqueda - ignorar cambios durante inicialización
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (isInitializing) return; // Ignorar durante inicialización
                 searchHandler.removeCallbacks(searchRunnable);
                 searchRunnable = () -> loadEntries();
                 searchHandler.postDelayed(searchRunnable, 300);
@@ -150,13 +151,14 @@ public class MainActivity extends AppCompatActivity {
 
         setupStatusFilter();
         loadCategories();
-        loadEntries();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        loadEntries();
+        if (!isInitializing) {
+            loadEntries();
+        }
     }
 
     private void setupStatusFilter() {
@@ -177,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
                     case "Completado": selectedStatus = "completado"; break;
                     case "Abandonado": selectedStatus = "abandonado"; break;
                 }
-                loadEntries();
+                if (!isInitializing) loadEntries();
             }
 
             @Override
@@ -219,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
                                     }
                                 }
                             }
-                            loadEntries();
+                            if (!isInitializing) loadEntries();
                         }
 
                         @Override
@@ -227,11 +229,25 @@ public class MainActivity extends AppCompatActivity {
                             selectedCategoryId = null;
                         }
                     });
+
+                    // Inicialización completada: cargar entries UNA SOLA VEZ
+                    isInitializing = false;
+                    loadEntries();
                 }
             }
 
             @Override
-            public void onFailure(Call<List<Category>> call, Throwable t) {}
+            public void onFailure(Call<List<Category>> call, Throwable t) {
+                // Si falla la carga de categorías, reintentar con otra IP
+                if (ApiClient.switchToNextUrl()) {
+                    apiService = ApiClient.getApiService();
+                    loadCategories();
+                } else {
+                    // Si no hay más IPs, igual cargamos entries
+                    isInitializing = false;
+                    loadEntries();
+                }
+            }
         });
     }
 
@@ -259,9 +275,14 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onFailure(Call<List<Entry>> call, Throwable t) {
-                        tvEmpty.setVisibility(View.VISIBLE);
-                        tvEmpty.setText("Error al cargar las entradas");
-                        rvEntries.setVisibility(View.GONE);
+                        if (ApiClient.switchToNextUrl()) {
+                            apiService = ApiClient.getApiService();
+                            loadEntries();
+                        } else {
+                            tvEmpty.setVisibility(View.VISIBLE);
+                            tvEmpty.setText("Error al cargar las entradas");
+                            rvEntries.setVisibility(View.GONE);
+                        }
                     }
                 });
     }

@@ -53,4 +53,7 @@
     <color name="golden_dark_inverse_surface">#FFE6E1DA</color>
     <color name="golden_dark_inverse_on_surface">#FF312F2D</color>
     <color name="golden_dark_inverse_primary">#FF7A6100</color>
+
+    <!-- Color para enlaces URL en el detalle de entrada -->
+    <color name="url_color">#FF1565C0</color>
 </resources>

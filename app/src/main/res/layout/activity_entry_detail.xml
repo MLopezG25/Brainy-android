@@ -12,6 +12,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- Tarjeta principal: título + chips -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -43,6 +44,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
+                        android:clickable="false"
+                        android:focusable="false"
+                        android:focusableInTouchMode="false"
                         style="@style/Widget.Material3.Chip.Suggestion"
                         tools:text="Cine" />
 
@@ -50,6 +54,9 @@
                         android:id="@+id/chipSubcategory"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:clickable="false"
+                        android:focusable="false"
+                        android:focusableInTouchMode="false"
                         style="@style/Widget.Material3.Chip.Suggestion"
                         tools:text="Película" />
 
@@ -60,6 +67,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
                     style="@style/Widget.Material3.Chip.Suggestion"
                     tools:text="Completado" />
 
@@ -68,6 +78,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
                     style="@style/Widget.Material3.Chip.Suggestion"
                     tools:text="ciencia-ficción, thriller" />
 
@@ -75,10 +88,32 @@
 
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Tarjeta de field_values (solo visible si hay) -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardFieldValues"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:visibility="gone"
+            app:contentPadding="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:id="@+id/fieldValuesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Tarjeta de notas (solo visible si hay notas del usuario) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardNotes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
             app:contentPadding="16dp"
             app:cardCornerRadius="12dp"
             app:cardElevation="2dp">
@@ -91,6 +126,47 @@
                 tools:text="Notas sobre la entrada..." />
 
         </com.google.android.material.card.MaterialCardView>
+
+        <!-- Botón para abrir en IMDB (solo si hay URL) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOpenImdb"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            android:text="Abrir en IMDB"
+            android:icon="@android:drawable/ic_menu_view"
+            style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        <!-- Botones de acción -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="horizontal"
+            android:weightSum="2">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEdit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Editar"
+                android:icon="@android:drawable/ic_menu_edit"
+                style="@style/Widget.Material3.Button.TonalButton" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDelete"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Borrar"
+                android:icon="@android:drawable/ic_menu_delete"
+                style="@style/Widget.Material3.Button.TonalButton" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

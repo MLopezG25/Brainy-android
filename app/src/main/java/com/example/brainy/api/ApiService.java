@@ -89,4 +89,9 @@ public interface ApiService {
 
     @POST("api/import/")
     Call<Map<String, Object>> importEntries(@Body List<Map<String, Object>> entries);
+
+    // Fetch IMDB data (proxy a TMDB desde el backend)
+
+    @POST("api/external/fetch-imdb/")
+    Call<Map<String, Object>> fetchImdbData(@Body Map<String, String> body);
 }

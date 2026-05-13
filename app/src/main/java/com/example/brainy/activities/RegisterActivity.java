@@ -95,9 +95,14 @@ public class RegisterActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                btnRegister.setEnabled(true);
-                btnRegister.setText("Registrarse");
-                Toast.makeText(RegisterActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                if (ApiClient.switchToNextUrl()) {
+                    apiService = ApiClient.getApiService();
+                    register();
+                } else {
+                    btnRegister.setEnabled(true);
+                    btnRegister.setText("Registrarse");
+                    Toast.makeText(RegisterActivity.this, "Error de conexión: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }

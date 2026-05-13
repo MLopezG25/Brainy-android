@@ -106,7 +106,12 @@ public class ProfileActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<StatsResponse> call, Throwable t) {
-                Toast.makeText(ProfileActivity.this, "Error al cargar estadísticas", Toast.LENGTH_SHORT).show();
+                if (ApiClient.switchToNextUrl()) {
+                    apiService = ApiClient.getApiService();
+                    loadStats();
+                } else {
+                    Toast.makeText(ProfileActivity.this, "Error al cargar estadísticas", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
