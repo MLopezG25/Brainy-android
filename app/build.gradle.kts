@@ -49,6 +49,9 @@ dependencies {
     // Gson para parsear JSON
     implementation(libs.gson)
 
+    // Glide para cargar imágenes
+    implementation(libs.glide)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
