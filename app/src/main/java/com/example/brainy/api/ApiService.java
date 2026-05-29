@@ -5,6 +5,7 @@ import com.example.brainy.api.models.Entry;
 import com.example.brainy.api.models.StatsResponse;
 import com.example.brainy.api.models.Subcategory;
 import com.example.brainy.api.models.Tag;
+import com.example.brainy.api.models.TimelineYear;
 
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,8 @@ public interface ApiService {
             @Query("search") String search,
             @Query("category") Integer categoryId,
             @Query("status") String status,
-            @Query("ordering") String ordering
+            @Query("ordering") String ordering,
+            @Query("tags") String tags
     );
 
     @POST("api/entries/")
@@ -80,6 +82,14 @@ public interface ApiService {
     @POST("api/tags/")
     Call<Tag> createTag(@Body Map<String, String> tagData);
 
+    // Timeline histórico
+
+    @GET("api/timeline/")
+    Call<List<TimelineYear>> getTimeline(
+            @Query("category") Integer categoryId,
+            @Query("status") String status
+    );
+
     // Estadísticas
 
     @GET("api/stats/")
@@ -90,8 +100,28 @@ public interface ApiService {
     @POST("api/import/")
     Call<Map<String, Object>> importEntries(@Body List<Map<String, Object>> entries);
 
+    // Importación desde JSON (con nombres de categoría/subcategoría)
+    @POST("api/import-json/")
+    Call<Map<String, Object>> importJson(@Body List<Map<String, Object>> entries);
+
     // Fetch IMDB data (proxy a TMDB desde el backend)
 
     @POST("api/external/fetch-imdb/")
     Call<Map<String, Object>> fetchImdbData(@Body Map<String, String> body);
+
+    // Fetch Discogs data (proxy a Discogs API desde el backend)
+
+    @POST("api/external/fetch-discogs/")
+    Call<Map<String, Object>> fetchDiscogsData(@Body Map<String, String> body);
+
+    // Fetch Wikipedia data (proxy a Wikipedia API desde el backend)
+
+    @POST("api/external/fetch-wikipedia/")
+    Call<Map<String, Object>> fetchWikipediaData(@Body Map<String, String> body);
+
+    // Fetch Books data (proxy a Google Books API desde el backend)
+
+    @POST("api/external/fetch-books/")
+    Call<Map<String, Object>> fetchBooksData(@Body Map<String, String> body);
+
 }

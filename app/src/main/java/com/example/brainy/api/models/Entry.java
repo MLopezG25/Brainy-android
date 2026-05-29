@@ -19,6 +19,9 @@ public class Entry {
     @SerializedName("description")
     private String description;
 
+    @SerializedName("image_url")
+    private String imageUrl;
+
     @SerializedName("category")
     private int categoryId;
 
@@ -42,6 +45,9 @@ public class Entry {
 
     @SerializedName("updated_at")
     private String updatedAt;
+
+    @SerializedName("completed_date")
+    private String completedDate;
 
     @SerializedName("field_values")
     private List<Map<String, Object>> fieldValues;
@@ -79,6 +85,14 @@ public class Entry {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public int getCategoryId() {
@@ -151,6 +165,14 @@ public class Entry {
 
     public void setFieldValues(List<Map<String, Object>> fieldValues) {
         this.fieldValues = fieldValues;
+    }
+
+    public String getCompletedDate() {
+        return completedDate;
+    }
+
+    public void setCompletedDate(String completedDate) {
+        this.completedDate = completedDate;
     }
 
     public String getStatusDisplay() {
