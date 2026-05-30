@@ -1,11 +1,11 @@
 package com.example.brainy.activities;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -14,6 +14,10 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.brainy.R;
 import com.example.brainy.api.ApiClient;
 import com.example.brainy.api.ApiService;
@@ -32,31 +36,39 @@ import retrofit2.Response;
 
 public class EntryDetailActivity extends AppCompatActivity {
 
-    private TextView tvTitle, tvNotes;
-    private Chip chipCategory, chipSubcategory, chipStatus, chipTags;
-    private MaterialButton btnEdit, btnDelete, btnOpenImdb;
-    private MaterialCardView cardFieldValues, cardNotes;
+    private MaterialCardView posterContainer;
+    private ImageView ivDetailPoster;
+    private TextView tvTitle, tvNotes, tvSourceUrl;
+    private Chip chipCategory, chipSubcategory, chipStatus, chipTags, chipCompletedDate, chipCreatedAt, chipUpdatedAt;
+    private MaterialButton btnEdit, btnDelete;
+    private MaterialCardView cardFieldValues, cardNotes, cardSource;
     private LinearLayout fieldValuesContainer;
     private ApiService apiService;
     private int entryId;
-    private String imdbUrl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_entry_detail);
 
+        posterContainer = findViewById(R.id.posterContainer);
+        posterContainer.setVisibility(View.GONE);
+        ivDetailPoster = findViewById(R.id.ivDetailPoster);
         tvTitle = findViewById(R.id.tvTitle);
         tvNotes = findViewById(R.id.tvNotes);
+        tvSourceUrl = findViewById(R.id.tvSourceUrl);
         chipCategory = findViewById(R.id.chipCategory);
         chipSubcategory = findViewById(R.id.chipSubcategory);
         chipStatus = findViewById(R.id.chipStatus);
         chipTags = findViewById(R.id.chipTags);
+        chipCompletedDate = findViewById(R.id.chipCompletedDate);
+        chipCreatedAt = findViewById(R.id.chipCreatedAt);
+        chipUpdatedAt = findViewById(R.id.chipUpdatedAt);
         btnEdit = findViewById(R.id.btnEdit);
         btnDelete = findViewById(R.id.btnDelete);
-        btnOpenImdb = findViewById(R.id.btnOpenImdb);
         cardFieldValues = findViewById(R.id.cardFieldValues);
         cardNotes = findViewById(R.id.cardNotes);
+        cardSource = findViewById(R.id.cardSource);
         fieldValuesContainer = findViewById(R.id.fieldValuesContainer);
 
         apiService = ApiClient.getApiService();
@@ -74,13 +86,6 @@ public class EntryDetailActivity extends AppCompatActivity {
         });
 
         btnDelete.setOnClickListener(v -> confirmDelete());
-
-        btnOpenImdb.setOnClickListener(v -> {
-            if (imdbUrl != null && !imdbUrl.isEmpty()) {
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(imdbUrl));
-                startActivity(browserIntent);
-            }
-        });
     }
 
     private void confirmDelete() {
@@ -123,6 +128,15 @@ public class EntryDetailActivity extends AppCompatActivity {
         chipSubcategory.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
         chipStatus.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
         chipTags.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        if (chipCompletedDate.getVisibility() == View.VISIBLE) {
+            chipCompletedDate.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        }
+        if (chipCreatedAt.getVisibility() == View.VISIBLE) {
+            chipCreatedAt.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        }
+        if (chipUpdatedAt.getVisibility() == View.VISIBLE) {
+            chipUpdatedAt.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        }
         btnEdit.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
         btnDelete.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
     }
@@ -134,6 +148,9 @@ public class EntryDetailActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     Entry entry = response.body();
                     tvTitle.setText(entry.getTitle());
+
+                    // Cargar imagen del póster si existe
+                    loadPosterImage(entry);
 
                     if (entry.getCategoryName() != null) {
                         chipCategory.setText(entry.getCategoryName());
@@ -158,14 +175,20 @@ public class EntryDetailActivity extends AppCompatActivity {
                         chipTags.setVisibility(View.VISIBLE);
                     }
 
+                    // Mostrar completed_date si el estado es "completado"
+                    showCompletedDate(entry);
+
                     // Mostrar field_values
                     showFieldValues(entry);
 
                     // Mostrar notas si existen (sin la URL)
                     showNotes(entry);
 
-                    // Mostrar botón IMDB si hay URL
-                    showImdbButton(entry);
+                    // Mostrar fuente/origen si hay URL
+                    showSource(entry);
+
+                    // Mostrar created_at y updated_at
+                    showDates(entry);
 
                     animateViewsIn();
                 }
@@ -181,6 +204,29 @@ public class EntryDetailActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void showCompletedDate(Entry entry) {
+        // solo mostramos el chip si el estado es completado o abandonado y hay fecha
+        boolean tieneFecha = entry.getCompletedDate() != null && !entry.getCompletedDate().isEmpty();
+        boolean estadoValido = "completado".equals(entry.getStatus()) || "abandonado".equals(entry.getStatus());
+
+        if (tieneFecha && estadoValido) {
+            String dateStr = entry.getCompletedDate();
+            // Formatear la fecha si viene en formato ISO
+            try {
+                String[] parts = dateStr.split("T")[0].split("-");
+                if (parts.length == 3) {
+                    dateStr = parts[2] + "/" + parts[1] + "/" + parts[0];
+                }
+            } catch (Exception ignored) {}
+
+            String prefijo = "completado".equals(entry.getStatus()) ? "Completado: " : "Abandonado: ";
+            chipCompletedDate.setText(prefijo + dateStr);
+            chipCompletedDate.setVisibility(View.VISIBLE);
+        } else {
+            chipCompletedDate.setVisibility(View.GONE);
+        }
     }
 
     private void showFieldValues(Entry entry) {
@@ -245,46 +291,79 @@ public class EntryDetailActivity extends AppCompatActivity {
         }
     }
 
-    private void showImdbButton(Entry entry) {
+    //  Extrae la URL del campo description (formato "URL: https://...")
+    private String extractUrlFromDescription(Entry entry) {
         String desc = entry.getDescription();
-        if (desc != null && desc.startsWith("URL: ")) {
-            int endOfUrl = desc.indexOf("\n\n");
-            if (endOfUrl != -1) {
-                imdbUrl = desc.substring(5, endOfUrl);
-            } else {
-                imdbUrl = desc.substring(5);
-            }
+        if (desc == null || !desc.startsWith("URL: ")) return null;
+        int endOfUrl = desc.indexOf("\n\n");
+        return endOfUrl != -1 ? desc.substring(5, endOfUrl) : desc.substring(5);
+    }
 
-            // Detectar el dominio para poner el texto adecuado
-            String buttonText = "Abrir enlace";
-            if (imdbUrl != null) {
-                String lowerUrl = imdbUrl.toLowerCase();
-                if (lowerUrl.contains("imdb.com")) {
-                    buttonText = "Abrir en IMDB";
-                } else if (lowerUrl.contains("discogs.com")) {
-                    buttonText = "Abrir en Discogs";
-                } else if (lowerUrl.contains("youtube.com") || lowerUrl.contains("youtu.be")) {
-                    buttonText = "Abrir en YouTube";
-                } else if (lowerUrl.contains("spotify.com")) {
-                    buttonText = "Abrir en Spotify";
-                } else if (lowerUrl.contains("goodreads.com")) {
-                    buttonText = "Abrir en Goodreads";
-                } else if (lowerUrl.contains("letterboxd.com")) {
-                    buttonText = "Abrir en Letterboxd";
-                } else if (lowerUrl.contains("myanimelist.net")) {
-                    buttonText = "Abrir en MyAnimeList";
-                } else if (lowerUrl.contains("steamcommunity.com") || lowerUrl.contains("store.steampowered.com")) {
-                    buttonText = "Abrir en Steam";
-                } else if (lowerUrl.contains("wikipedia.org")) {
-                    buttonText = "Abrir en Wikipedia";
-                } else {
-                    buttonText = "Abrir enlace";
-                }
-            }
+    // Abre una URL en el navegador
+    private void openUrl(String url) {
+        if (url != null && !url.isEmpty()) {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        }
+    }
 
-            btnOpenImdb.setText(buttonText);
-            btnOpenImdb.setVisibility(View.VISIBLE);
-            btnOpenImdb.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+    private void showSource(Entry entry) {
+        String sourceUrl = extractUrlFromDescription(entry);
+        if (sourceUrl != null) {
+            tvSourceUrl.setText(sourceUrl);
+            cardSource.setVisibility(View.VISIBLE);
+            cardSource.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+            // Click en texto o card abre el navegador
+            View.OnClickListener openLink = v -> openUrl(sourceUrl);
+            tvSourceUrl.setOnClickListener(openLink);
+            cardSource.setOnClickListener(openLink);
+        }
+    }
+
+    // Muestra las fechas de creación y última actualización
+    private void showDates(Entry entry) {
+        if (entry.getCreatedAt() != null && !entry.getCreatedAt().isEmpty()) {
+            String dateStr = formatDateTime(entry.getCreatedAt());
+            chipCreatedAt.setText("Creado: " + dateStr);
+            chipCreatedAt.setVisibility(View.VISIBLE);
+        }
+        if (entry.getUpdatedAt() != null && !entry.getUpdatedAt().isEmpty()) {
+            String dateStr = formatDateTime(entry.getUpdatedAt());
+            chipUpdatedAt.setText("Actualizado: " + dateStr);
+            chipUpdatedAt.setVisibility(View.VISIBLE);
+        }
+    }
+
+    // Formatea una fecha ISO a formato legible DD/MM/YYYY
+    private String formatDateTime(String isoDate) {
+        try {
+            String datePart = isoDate.split("T")[0];
+            String[] parts = datePart.split("-");
+            if (parts.length == 3) {
+                return parts[2] + "/" + parts[1] + "/" + parts[0];
+            }
+        } catch (Exception ignored) {}
+        return isoDate;
+    }
+
+    private void loadPosterImage(Entry entry) {
+        String imageUrl = entry.getImageUrl();
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            // Hacer visible el contenedor del póster
+            posterContainer.setVisibility(View.VISIBLE);
+
+            // Cargar imagen con Glide
+            Glide.with(this)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.entry_card_placeholder)
+                    .transition(DrawableTransitionOptions.withCrossFade(300))
+                    .apply(RequestOptions.bitmapTransform(new RoundedCorners(16)))
+                    .override(800, 1200)
+                    .into(ivDetailPoster);
+
+            // Animar entrada del contenedor completo (imagen + overlay)
+            posterContainer.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        } else {
+            posterContainer.setVisibility(View.GONE);
         }
     }
 }

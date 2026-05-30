@@ -1,13 +1,13 @@
 package com.example.brainy.activities;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityOptionsCompat;
 
 import com.example.brainy.R;
 import com.example.brainy.api.ApiClient;
@@ -52,7 +52,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         btnGoToLogin.setOnClickListener(v -> {
             finish();
-            overridePendingTransition(R.anim.slide_right, R.anim.fade_out);
         });
     }
 
@@ -81,9 +80,21 @@ public class RegisterActivity extends AppCompatActivity {
                 btnRegister.setText("Registrarse");
 
                 if (response.isSuccessful()) {
+                    // Guardar sesión permanente y datos del usuario
+                    SharedPreferences prefs = getSharedPreferences("brainy_prefs", MODE_PRIVATE);
+                    prefs.edit()
+                        .putBoolean("is_logged_in", true)
+                        .putString("username", username)
+                        .putString("email", email)
+                        .apply();
+                    ApiClient.saveSessionCookies(RegisterActivity.this);
+
                     Toast.makeText(RegisterActivity.this, "Cuenta creada correctamente", Toast.LENGTH_SHORT).show();
+                    // Ir directamente al MainActivity
+                    Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
                     finish();
-                    overridePendingTransition(R.anim.slide_right, R.anim.fade_out);
                 } else {
                     String error = "Error al registrarse";
                     if (response.body() != null && response.body().containsKey("error")) {

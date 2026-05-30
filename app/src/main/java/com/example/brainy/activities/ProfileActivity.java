@@ -45,6 +45,13 @@ public class ProfileActivity extends AppCompatActivity {
 
         apiService = ApiClient.getApiService();
 
+        MaterialButton buttonSettings = findViewById(R.id.button_settings);
+        buttonSettings.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
+        buttonSettings.setOnClickListener(v -> {
+            Intent intent = new Intent(ProfileActivity.this, SettingsActivity.class);
+            startActivity(intent);
+        });
+
         MaterialButton buttonLogout = findViewById(R.id.button_logout);
         buttonLogout.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
         buttonLogout.setOnClickListener(v -> logout());
@@ -57,22 +64,17 @@ public class ProfileActivity extends AppCompatActivity {
                 return true;
             } else if (itemId == R.id.nav_hub) {
                 Intent intent = new Intent(ProfileActivity.this, MainActivity.class);
-                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
-                        ProfileActivity.this,
-                        R.anim.slide_right,
-                        R.anim.fade_out
-                );
-                startActivity(intent, options.toBundle());
+                startActivity(intent);
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_timeline) {
+                Intent intent = new Intent(ProfileActivity.this, TimelineActivity.class);
+                startActivity(intent);
                 finish();
                 return true;
             } else if (itemId == R.id.nav_add) {
                 Intent intent = new Intent(ProfileActivity.this, EntryFormActivity.class);
-                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
-                        ProfileActivity.this,
-                        R.anim.slide_up,
-                        R.anim.fade_out
-                );
-                startActivity(intent, options.toBundle());
+                startActivity(intent);
                 return true;
             }
             return false;
@@ -96,11 +98,11 @@ public class ProfileActivity extends AppCompatActivity {
             public void onResponse(Call<StatsResponse> call, Response<StatsResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     StatsResponse stats = response.body();
-                    textTotalEntries.setText("Total entradas: " + stats.getTotalEntries());
-                    textPendiente.setText("Pendiente: " + stats.getPendiente());
-                    textEnProgreso.setText("En progreso: " + stats.getEnProgreso());
-                    textCompletado.setText("Completado: " + stats.getCompletado());
-                    textAbandonado.setText("Abandonado: " + stats.getAbandonado());
+                    textTotalEntries.setText(String.valueOf(stats.getTotalEntries()));
+                    textPendiente.setText(String.valueOf(stats.getPendiente()));
+                    textEnProgreso.setText(String.valueOf(stats.getEnProgreso()));
+                    textCompletado.setText(String.valueOf(stats.getCompletado()));
+                    textAbandonado.setText(String.valueOf(stats.getAbandonado()));
                 }
             }
 
@@ -138,7 +140,6 @@ public class ProfileActivity extends AppCompatActivity {
         Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
-        overridePendingTransition(R.anim.fade_in, R.anim.fade_out);
         finish();
     }
 }

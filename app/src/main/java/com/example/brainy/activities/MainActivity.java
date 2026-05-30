@@ -1,21 +1,18 @@
 package com.example.brainy.activities;
 
-import android.animation.AnimatorInflater;
-import android.animation.AnimatorSet;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityOptionsCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.brainy.R;
@@ -24,8 +21,8 @@ import com.example.brainy.api.ApiClient;
 import com.example.brainy.api.ApiService;
 import com.example.brainy.api.models.Category;
 import com.example.brainy.api.models.Entry;
+import com.example.brainy.api.models.Tag;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
@@ -40,12 +37,12 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView rvEntries;
     private TextView tvEmpty;
     private TextInputEditText etSearch;
-    private android.widget.Spinner spinnerCategoryFilter, spinnerStatusFilter;
-    private FloatingActionButton fabAdd;
+    private android.widget.Spinner spinnerCategoryFilter, spinnerStatusFilter, spinnerTagFilter;
 
     private EntryAdapter adapter;
     private List<Entry> entries = new ArrayList<>();
     private List<Category> categories = new ArrayList<>();
+    private List<Tag> tags = new ArrayList<>();
     private ApiService apiService;
 
     private Handler searchHandler = new Handler(Looper.getMainLooper());
@@ -53,55 +50,37 @@ public class MainActivity extends AppCompatActivity {
 
     private Integer selectedCategoryId = null;
     private String selectedStatus = null;
+    private String selectedTagIds = null;
     private boolean isInitializing = true;
+    private SharedPreferences preferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Animar entrada
+        View root = findViewById(android.R.id.content);
+        root.startAnimation(android.view.animation.AnimationUtils.loadAnimation(this, R.anim.fade_in));
+
         rvEntries = findViewById(R.id.rvEntries);
         tvEmpty = findViewById(R.id.tvEmpty);
         etSearch = findViewById(R.id.etSearch);
         spinnerCategoryFilter = findViewById(R.id.spinnerCategoryFilter);
         spinnerStatusFilter = findViewById(R.id.spinnerStatusFilter);
-        fabAdd = findViewById(R.id.fabAdd);
+        spinnerTagFilter = findViewById(R.id.spinnerTagFilter);
 
         apiService = ApiClient.getApiService();
+        preferences = getSharedPreferences("brainy_prefs", MODE_PRIVATE);
 
-        rvEntries.setLayoutManager(new LinearLayoutManager(this));
+        int columns = preferences.getInt("grid_columns", 3);
+        rvEntries.setLayoutManager(new GridLayoutManager(this, columns));
         adapter = new EntryAdapter(entries, entry -> {
             Intent intent = new Intent(MainActivity.this, EntryDetailActivity.class);
             intent.putExtra("entry_id", entry.getId());
-            ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
-                    MainActivity.this,
-                    R.anim.slide_left,
-                    R.anim.fade_out
-            );
-            startActivity(intent, options.toBundle());
+            startActivity(intent);
         });
         rvEntries.setAdapter(adapter);
-
-        // Animación de entrada para el FAB
-        Animation fabAnim = AnimationUtils.loadAnimation(this, R.anim.fab_scale_up);
-        fabAdd.startAnimation(fabAnim);
-
-        fabAdd.setOnClickListener(v -> {
-            AnimatorSet pressAnim = (AnimatorSet) AnimatorInflater.loadAnimator(
-                    MainActivity.this, R.animator.fab_press_anim);
-            pressAnim.setTarget(fabAdd);
-            pressAnim.start();
-
-            fabAdd.postDelayed(() -> {
-                Intent intent = new Intent(MainActivity.this, EntryFormActivity.class);
-                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
-                        MainActivity.this,
-                        R.anim.slide_up,
-                        R.anim.fade_out
-                );
-                startActivity(intent, options.toBundle());
-            }, 150);
-        });
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         bottomNav.setSelectedItemId(R.id.nav_hub);
@@ -111,28 +90,24 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             } else if (itemId == R.id.nav_add) {
                 Intent intent = new Intent(MainActivity.this, EntryFormActivity.class);
-                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
-                        MainActivity.this,
-                        R.anim.slide_up,
-                        R.anim.fade_out
-                );
-                startActivity(intent, options.toBundle());
+                startActivity(intent);
+                return true;
+            } else if (itemId == R.id.nav_timeline) {
+                Intent intent = new Intent(MainActivity.this, TimelineActivity.class);
+                startActivity(intent);
+                finish();
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
-                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
-                        MainActivity.this,
-                        R.anim.slide_left,
-                        R.anim.fade_out
-                );
-                startActivity(intent, options.toBundle());
+                startActivity(intent);
+
                 finish();
                 return true;
             }
             return false;
         });
 
-        // TextWatcher para búsqueda - ignorar cambios durante inicialización
+        // TextWatcher para búsqueda, ignorar cambios durante inicialización
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -141,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (isInitializing) return; // Ignorar durante inicialización
                 searchHandler.removeCallbacks(searchRunnable);
-                searchRunnable = () -> loadEntries();
+                     searchRunnable = () -> loadEntries();
                 searchHandler.postDelayed(searchRunnable, 300);
             }
 
@@ -151,18 +126,26 @@ public class MainActivity extends AppCompatActivity {
 
         setupStatusFilter();
         loadCategories();
+        loadTags();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         if (!isInitializing) {
+            // Recargar número de columnas desde preferencias (por si cambió en ajustes)
+            int columns = preferences.getInt("grid_columns", 3);
+            GridLayoutManager layoutManager = (GridLayoutManager) rvEntries.getLayoutManager();
+            if (layoutManager != null && layoutManager.getSpanCount() != columns) {
+                rvEntries.setLayoutManager(new GridLayoutManager(this, columns));
+                rvEntries.setAdapter(adapter);
+            }
             loadEntries();
         }
     }
 
     private void setupStatusFilter() {
-        String[] statuses = {"Todos", "Pendiente", "En progreso", "Completado", "Abandonado"};
+        String[] statuses = {"Estado", "Pendiente", "En progreso", "Completado", "Abandonado"};
         android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, statuses);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -171,14 +154,7 @@ public class MainActivity extends AppCompatActivity {
         spinnerStatusFilter.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
-                String text = statuses[position];
-                switch (text) {
-                    case "Todos": selectedStatus = null; break;
-                    case "Pendiente": selectedStatus = "pendiente"; break;
-                    case "En progreso": selectedStatus = "en_progreso"; break;
-                    case "Completado": selectedStatus = "completado"; break;
-                    case "Abandonado": selectedStatus = "abandonado"; break;
-                }
+                selectedStatus = statusToKey(statuses[position]);
                 if (!isInitializing) loadEntries();
             }
 
@@ -189,48 +165,27 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // Convierte texto de estado a su clave interna, o null para "Todos"
+    private String statusToKey(String text) {
+        switch (text) {
+            case "Pendiente": return "pendiente";
+            case "En progreso": return "en_progreso";
+            case "Completado": return "completado";
+            case "Abandonado": return "abandonado";
+            default: return null; // "Estado"
+        }
+    }
+
     private void loadCategories() {
         apiService.getCategories().enqueue(new Callback<List<Category>>() {
             @Override
             public void onResponse(Call<List<Category>> call, Response<List<Category>> response) {
+                if (response.code() == 401 || response.code() == 403) {
+                    goToLogin(); return;
+                }
                 if (response.isSuccessful() && response.body() != null) {
                     categories = response.body();
-
-                    List<String> categoryNames = new ArrayList<>();
-                    categoryNames.add("Todas");
-                    for (Category cat : categories) {
-                        categoryNames.add(cat.getName());
-                    }
-
-                    android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(MainActivity.this,
-                            android.R.layout.simple_spinner_item, categoryNames);
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    spinnerCategoryFilter.setAdapter(adapter);
-
-                    spinnerCategoryFilter.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
-                        @Override
-                        public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
-                            String text = categoryNames.get(position);
-                            if (text.equals("Todas")) {
-                                selectedCategoryId = null;
-                            } else {
-                                for (Category cat : categories) {
-                                    if (cat.getName().equals(text)) {
-                                        selectedCategoryId = cat.getId();
-                                        break;
-                                    }
-                                }
-                            }
-                            if (!isInitializing) loadEntries();
-                        }
-
-                        @Override
-                        public void onNothingSelected(android.widget.AdapterView<?> parent) {
-                            selectedCategoryId = null;
-                        }
-                    });
-
-                    // Inicialización completada: cargar entries UNA SOLA VEZ
+                    setupCategorySpinner();
                     isInitializing = false;
                     loadEntries();
                 }
@@ -238,15 +193,91 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Category>> call, Throwable t) {
-                // Si falla la carga de categorías, reintentar con otra IP
                 if (ApiClient.switchToNextUrl()) {
                     apiService = ApiClient.getApiService();
                     loadCategories();
                 } else {
-                    // Si no hay más IPs, igual cargamos entries
                     isInitializing = false;
                     loadEntries();
                 }
+            }
+        });
+    }
+
+    private void setupCategorySpinner() {
+        List<String> categoryNames = new ArrayList<>();
+        categoryNames.add("Categoría");
+        for (Category cat : categories) categoryNames.add(cat.getName());
+
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, categoryNames);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerCategoryFilter.setAdapter(adapter);
+
+        spinnerCategoryFilter.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
+                String text = categoryNames.get(position);
+                selectedCategoryId = text.equals("Categoría") ? null : findCategoryIdByName(text);
+                if (!isInitializing) loadEntries();
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {
+                selectedCategoryId = null;
+            }
+        });
+    }
+
+    private Integer findCategoryIdByName(String name) {
+        for (Category cat : categories) {
+            if (cat.getName().equals(name)) return cat.getId();
+        }
+        return null;
+    }
+
+    private void loadTags() {
+        apiService.getTags().enqueue(new Callback<List<Tag>>() {
+            @Override
+            public void onResponse(Call<List<Tag>> call, Response<List<Tag>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    tags = response.body();
+                    setupTagFilter();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Tag>> call, Throwable t) {
+                // Si falla, no pasa nada, el filtro de tags simplemente no aparece
+            }
+        });
+    }
+
+    private void setupTagFilter() {
+        List<String> tagNames = new ArrayList<>();
+        tagNames.add("Tag");
+        for (Tag tag : tags) tagNames.add(tag.getName());
+
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, tagNames);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerTagFilter.setAdapter(adapter);
+
+        spinnerTagFilter.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
+                if (position == 0) {
+                    selectedTagIds = null;
+                } else {
+                    Tag selectedTag = tags.get(position - 1);
+                    selectedTagIds = String.valueOf(selectedTag.getId());
+                }
+                if (!isInitializing) loadEntries();
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {
+                selectedTagIds = null;
             }
         });
     }
@@ -255,10 +286,13 @@ public class MainActivity extends AppCompatActivity {
         String search = etSearch.getText().toString().trim();
         String searchParam = search.isEmpty() ? null : search;
 
-        apiService.getEntries(searchParam, selectedCategoryId, selectedStatus, "-updated_at")
+        apiService.getEntries(searchParam, selectedCategoryId, selectedStatus, "-updated_at", selectedTagIds)
                 .enqueue(new Callback<List<Entry>>() {
                     @Override
                     public void onResponse(Call<List<Entry>> call, Response<List<Entry>> response) {
+                        if (response.code() == 401 || response.code() == 403) {
+                            goToLogin(); return;
+                        }
                         if (response.isSuccessful() && response.body() != null) {
                             entries = response.body();
                             adapter.updateEntries(entries);
@@ -285,5 +319,13 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 });
+    }
+
+    private void goToLogin() {
+        ApiClient.clearSession(this);
+        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }

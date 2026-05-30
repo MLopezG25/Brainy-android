@@ -1,27 +1,44 @@
 package com.example.brainy.adapters;
 
-import android.animation.AnimatorSet;
-
-import android.animation.ObjectAnimator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateDecelerateInterpolator;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.brainy.R;
 import com.example.brainy.api.models.Entry;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder> {
 
     private List<Entry> entries;
     private OnEntryClickListener listener;
     private int lastAnimatedPosition = -1;
+
+    // colores por categoría
+    private static final Map<String, Integer> categoryColors = new HashMap<>();
+    static {
+        categoryColors.put("Cine", 0xFFD4A843);
+        categoryColors.put("Música", 0xFFC4912E);
+        categoryColors.put("Literatura", 0xFF8B6F47);
+        categoryColors.put("Videojuegos", 0xFFB8863C);
+        categoryColors.put("Arte", 0xFFE8A87C);
+        categoryColors.put("Ciencia", 0xFF6B8E6B);
+        categoryColors.put("Historia", 0xFFC8966A);
+        categoryColors.put("Arquitectura", 0xFF9E9E9E);
+    }
 
     public interface OnEntryClickListener {
         void onEntryClick(Entry entry);
@@ -54,59 +71,60 @@ public class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHol
 
     public void updateEntries(List<Entry> newEntries) {
         this.entries = newEntries;
-        lastAnimatedPosition = -1; // Resetear para que se vuelvan a animar
+        lastAnimatedPosition = -1;
         notifyDataSetChanged();
     }
 
     private void animateItem(View view, int position) {
-        // Solo animar si no se ha animado antes esta posición
         if (position <= lastAnimatedPosition) {
             return;
         }
         lastAnimatedPosition = position;
 
-        // Configurar estado inicial (invisible y escalado)
         view.setAlpha(0f);
-        view.setScaleX(0.8f);
-        view.setScaleY(0.8f);
-        view.setTranslationY(60f);
+        view.setTranslationY(40f);
 
-        // Crear animaciones
-        ObjectAnimator fadeIn = ObjectAnimator.ofFloat(view, "alpha", 0f, 1f);
-        fadeIn.setDuration(350);
-
-        ObjectAnimator scaleX = ObjectAnimator.ofFloat(view, "scaleX", 0.8f, 1f);
-        scaleX.setDuration(350);
-
-        ObjectAnimator scaleY = ObjectAnimator.ofFloat(view, "scaleY", 0.8f, 1f);
-        scaleY.setDuration(350);
-
-        ObjectAnimator slideUp = ObjectAnimator.ofFloat(view, "translationY", 60f, 0f);
-        slideUp.setDuration(350);
-
-        // Agrupar animaciones
-        AnimatorSet animatorSet = new AnimatorSet();
-        animatorSet.playTogether(fadeIn, scaleX, scaleY, slideUp);
-        animatorSet.setInterpolator(new AccelerateDecelerateInterpolator());
-        animatorSet.setStartDelay(position * 80L); // Retraso escalonado: 80ms por item
-        animatorSet.start();
+        view.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(300)
+                .setStartDelay(position * 40L)
+                .start();
     }
 
     static class EntryViewHolder extends RecyclerView.ViewHolder {
 
+        private ImageView ivPoster;
         private TextView tvTitle;
         private TextView tvCategory;
-        private TextView tvStatus;
+        private ImageView ivStatus;
 
         EntryViewHolder(@NonNull View itemView) {
             super(itemView);
+            ivPoster = itemView.findViewById(R.id.ivPoster);
             tvTitle = itemView.findViewById(R.id.tvTitle);
             tvCategory = itemView.findViewById(R.id.tvCategory);
-            tvStatus = itemView.findViewById(R.id.tvStatus);
+            ivStatus = itemView.findViewById(R.id.ivStatus);
         }
 
         void bind(final Entry entry, final OnEntryClickListener listener) {
             tvTitle.setText(entry.getTitle());
+
+            // Cargar imagen con Glide si hay image_url
+            String imageUrl = entry.getImageUrl();
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                Glide.with(ivPoster.getContext())
+                        .load(imageUrl)
+                        .placeholder(android.R.color.transparent)
+                        .transition(DrawableTransitionOptions.withCrossFade(200))
+                        .apply(RequestOptions.bitmapTransform(new RoundedCorners(12)))
+                        .override(600, 900)
+                        .into(ivPoster);
+            } else {
+                Glide.with(ivPoster.getContext()).clear(ivPoster);
+                ivPoster.setImageDrawable(null);
+                ivPoster.setBackgroundResource(R.drawable.entry_card_placeholder);
+            }
 
             // Mostrar categoría y subcategoría si existen
             String categoryText = "";
@@ -118,8 +136,34 @@ public class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHol
             }
             tvCategory.setText(categoryText);
 
-            // Mostrar el estado en español
-            tvStatus.setText("Estado: " + entry.getStatusDisplay());
+            // Color por categoría
+            if (entry.getCategoryName() != null && categoryColors.containsKey(entry.getCategoryName())) {
+                int color = categoryColors.get(entry.getCategoryName());
+                tvCategory.setTextColor(color);
+            } else {
+                tvCategory.setTextColor(
+                        ContextCompat.getColor(tvCategory.getContext(), R.color.golden_on_surface_variant));
+            }
+
+            // Mostrar estado como icono custom
+            int statusIconRes;
+            switch (entry.getStatus()) {
+                case "pendiente":
+                    statusIconRes = R.drawable.ic_status_pending;
+                    break;
+                case "en_progreso":
+                    statusIconRes = R.drawable.ic_status_progress;
+                    break;
+                case "completado":
+                    statusIconRes = R.drawable.ic_status_completed;
+                    break;
+                case "abandonado":
+                    statusIconRes = R.drawable.ic_status_abandoned;
+                    break;
+                default:
+                    statusIconRes = R.drawable.ic_status_pending;
+            }
+            ivStatus.setImageResource(statusIconRes);
 
             // Click en la tarjeta para ir al detalle
             itemView.setOnClickListener(v -> {

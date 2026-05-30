@@ -9,12 +9,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Actividad "invisible" que recibe el contenido compartido desde otras apps
- * (ACTION_SEND), lo parsea y redirige a EntryFormActivity con los datos precargados.
- *
- * Aparece en el menú contextual "Compartir" de Android.
- */
+// Actividad "invisible" que recibe el contenido compartido desde otras apps y debería aparecer en los menús de compartir de las apps externas :)
+
 public class ShareReceiverActivity extends AppCompatActivity {
 
     @Override
@@ -87,9 +83,8 @@ public class ShareReceiverActivity extends AppCompatActivity {
         finish();
     }
 
-    /**
-     * Extrae la primera URL que encuentre en un texto.
-     */
+      // Extrae la primera URL que encuentre en un texto.
+
     private String extractUrl(String text) {
         // Patrón para detectar URLs
         Pattern urlPattern = Pattern.compile(
@@ -102,10 +97,9 @@ public class ShareReceiverActivity extends AppCompatActivity {
         return "";
     }
 
-    /**
-     * Intenta extraer un título descriptivo del texto compartido.
-     * Por ejemplo, de "Mira este video: https://youtube.com/watch?v=xxx" extrae "Mira este video"
-     */
+
+    // Intenta extraer un título descriptivo del texto compartido.
+
     private String extractPageTitle(String text) {
         // Quitar la URL del texto
         String withoutUrl = text.replaceAll("https?://[\\w\\-._~:/?#\\[\\]@!$&'()*+,;=%]+", "").trim();

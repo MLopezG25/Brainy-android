@@ -1,16 +1,19 @@
 package com.example.brainy.activities;
 
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.View;
 import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityOptionsCompat;
 
 import com.example.brainy.R;
 import com.example.brainy.api.ApiClient;
@@ -21,6 +24,7 @@ import com.example.brainy.api.models.Subcategory;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,9 +37,10 @@ import retrofit2.Response;
 
 public class EntryFormActivity extends AppCompatActivity {
 
-    private TextInputEditText etTitle, etUrl, etNotes;
+    private TextInputEditText etTitle, etUrl, etNotes, etCompletedDate;
     private AutoCompleteTextView autoCompleteCategory, autoCompleteSubcategory, autoCompleteStatus;
     private MaterialButton btnSave;
+    private TextInputLayout layoutCompletedDate;
 
     private ApiService apiService;
     private List<Category> categories = new ArrayList<>();
@@ -44,6 +49,14 @@ public class EntryFormActivity extends AppCompatActivity {
 
     // Datos precargados desde fetch-imdb
     private List<Map<String, Object>> pendingFieldValues = null;
+    private String pendingImageUrl = null;
+    private SharedPreferences preferences;
+    private boolean isLoadingForEdit = false;
+    // Bandera para evitar múltiples fetchs simultáneos
+    private boolean isFetching = false;
+
+    // Para saber si el usuario ha tocado algo y mostrar confirmación al salir
+    private boolean formModified = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,8 +70,11 @@ public class EntryFormActivity extends AppCompatActivity {
         autoCompleteSubcategory = findViewById(R.id.autoCompleteSubcategory);
         autoCompleteStatus = findViewById(R.id.autoCompleteStatus);
         btnSave = findViewById(R.id.btnSave);
+        etCompletedDate = findViewById(R.id.etCompletedDate);
+        layoutCompletedDate = findViewById(R.id.layoutCompletedDate);
 
         apiService = ApiClient.getApiService();
+        preferences = getSharedPreferences("brainy_prefs", MODE_PRIVATE);
 
         // Animaciones de entrada para los campos del formulario
         etTitle.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
@@ -72,11 +88,31 @@ public class EntryFormActivity extends AppCompatActivity {
         setupStatusDropdown();
         loadCategories();
 
+        // Marcar que el formulario se ha modificado al tocar cualquier campo
+        TextWatcher modifiedWatcher = new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) { formModified = true; }
+        };
+        etTitle.addTextChangedListener(modifiedWatcher);
+        etNotes.addTextChangedListener(modifiedWatcher);
+
+        // Mostrar/ocultar el campo de fecha completada según el estado seleccionado
+        autoCompleteStatus.setOnItemClickListener((parent, view, position, id) -> {
+            formModified = true;
+            String selected = (String) parent.getItemAtPosition(position);
+            if ("Completado".equals(selected) || "Abandonado".equals(selected)) {
+                layoutCompletedDate.setVisibility(View.VISIBLE);
+            } else {
+                layoutCompletedDate.setVisibility(View.GONE);
+                etCompletedDate.setText("");
+            }
+        });
+
         btnSave.setOnClickListener(v -> saveEntry());
 
-        // Detectar cuando se pega/escribe una URL de IMDB para autocompletar
+        // Detectar cuando se pega una URL para autocompletar
         etUrl.addTextChangedListener(new TextWatcher() {
-            private boolean isFetching = false;
 
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -87,11 +123,30 @@ public class EntryFormActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) {
                 if (isFetching) return;
+                if (isLoadingForEdit) return;
                 String url = s.toString().trim();
-                // Detectar URLs de IMDB: imdb.com/title/ttXXXXXX o m.imdb.com, etc.
+                if (url.isEmpty()) return;
+                formModified = true;
+
+                // Detectar URLs de IMDB: imdb.com/title/ttXXXXXX
                 if (url.contains("imdb.com/title/") || url.matches(".*tt\\d{7,8}.*")) {
                     isFetching = true;
                     fetchImdbData(url);
+                }
+                // Detectar URLs de Discogs según tipo: discogs.com/release/, /master/ o /artist/
+                else if (url.contains("discogs.com/") && (url.contains("/release/") || url.contains("/master/") || url.contains("/artist/"))) {
+                    isFetching = true;
+                    fetchDiscogsData(url);
+                }
+                // Detectar URLs de Wikipedia: wikipedia.org/wiki/
+                else if (url.contains("wikipedia.org/wiki/")) {
+                    isFetching = true;
+                    fetchWikipediaData(url);
+                }
+                // Detectar URLs de libros: books.google.com, openlibrary.org o ISBN
+                else if (url.contains("books.google.") || url.contains("openlibrary.org") || url.matches(".*\\b(978[0-9]{10}|979[0-9]{10}|[0-9]{9}[0-9Xx])\\b.*")) {
+                    isFetching = true;
+                    fetchBooksData(url);
                 }
             }
         });
@@ -104,22 +159,17 @@ public class EntryFormActivity extends AppCompatActivity {
                 return true;
             } else if (itemId == R.id.nav_hub) {
                 Intent intent = new Intent(EntryFormActivity.this, MainActivity.class);
-                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
-                        EntryFormActivity.this,
-                        R.anim.slide_right,
-                        R.anim.fade_out
-                );
-                startActivity(intent, options.toBundle());
+                startActivity(intent);
+                finish();
+                return true;
+            } else if (itemId == R.id.nav_timeline) {
+                Intent intent = new Intent(EntryFormActivity.this, TimelineActivity.class);
+                startActivity(intent);
                 finish();
                 return true;
             } else if (itemId == R.id.nav_profile) {
                 Intent intent = new Intent(EntryFormActivity.this, ProfileActivity.class);
-                ActivityOptionsCompat options = ActivityOptionsCompat.makeCustomAnimation(
-                        EntryFormActivity.this,
-                        R.anim.slide_left,
-                        R.anim.fade_out
-                );
-                startActivity(intent, options.toBundle());
+                startActivity(intent);
                 finish();
                 return true;
             }
@@ -136,9 +186,7 @@ public class EntryFormActivity extends AppCompatActivity {
         }
         if (intent.hasExtra("prefill_url")) {
             String prefillUrl = intent.getStringExtra("prefill_url");
-            if (prefillUrl != null) {
-                etUrl.setText(prefillUrl);
-            }
+            if (prefillUrl != null) setUrlSilently(prefillUrl);
         }
         if (intent.hasExtra("prefill_notes")) {
             String prefillNotes = intent.getStringExtra("prefill_notes");
@@ -155,15 +203,37 @@ public class EntryFormActivity extends AppCompatActivity {
         }
     }
 
+    // Confirmación al ir para atrás si el formulario se ha tocado
+    @Override
+    public void onBackPressed() {
+        if (formModified) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Descartar cambios")
+                    .setMessage("¿Seguro que quieres salir? Los cambios no se guardarán.")
+                    .setPositiveButton("Salir", (dialog, which) -> EntryFormActivity.super.onBackPressed())
+                    .setNegativeButton("Quedarme", null)
+                    .show();
+        } else {
+            super.onBackPressed();
+        }
+    }
+
     private void fetchImdbData(String url) {
         Toast.makeText(this, "Obteniendo datos de IMDB...", Toast.LENGTH_SHORT).show();
 
         Map<String, String> body = new HashMap<>();
         body.put("url", url);
 
+        // Incluir api_key de TMDB si está guardada en preferencias
+        String tmdbApiKey = preferences.getString("tmdb_api_key", "");
+        if (!tmdbApiKey.isEmpty()) {
+            body.put("api_key", tmdbApiKey);
+        }
+
         apiService.fetchImdbData(body).enqueue(new Callback<Map<String, Object>>() {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                isFetching = false;
                 if (response.isSuccessful() && response.body() != null) {
                     Map<String, Object> data = response.body();
 
@@ -177,6 +247,12 @@ public class EntryFormActivity extends AppCompatActivity {
                     String overview = (String) data.get("overview");
                     if (overview != null && !overview.isEmpty()) {
                         etNotes.setText(overview);
+                    }
+
+                    // Guardar poster_path para enviarlo al guardar
+                    String posterPath = (String) data.get("poster_path");
+                    if (posterPath != null && !posterPath.isEmpty()) {
+                        pendingImageUrl = posterPath;
                     }
 
                     // Guardar field_values para enviarlos al guardar
@@ -202,6 +278,7 @@ public class EntryFormActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                isFetching = false;
                 if (ApiClient.switchToNextUrl()) {
                     apiService = ApiClient.getApiService();
                     fetchImdbData(url);
@@ -213,19 +290,156 @@ public class EntryFormActivity extends AppCompatActivity {
         });
     }
 
+    // Procesa datos comunes de fetch (título, imagen, field_values, categoría)
+    private void processFetchedData(Map<String, Object> data, String titleKey, String notesKey) {
+        String title = (String) data.get(titleKey);
+        if (title != null && !title.isEmpty()) etTitle.setText(title);
+
+        String notes = (String) data.get(notesKey);
+        if (notes != null && !notes.isEmpty()) etNotes.setText(notes);
+
+        String imageUrl = (String) data.get("image_url");
+        if (imageUrl != null && !imageUrl.isEmpty()) pendingImageUrl = imageUrl;
+
+        Object fvObj = data.get("field_values");
+        if (fvObj instanceof List) pendingFieldValues = (List<Map<String, Object>>) fvObj;
+
+        String categoryName = (String) data.get("category_name");
+        String subcategoryName = (String) data.get("subcategory_name");
+        if (categoryName != null && subcategoryName != null) {
+            autoSelectCategoryAndSubcategory(categoryName, subcategoryName);
+        }
+    }
+
+    private void fetchDiscogsData(String url) {
+        Toast.makeText(this, "Obteniendo datos de Discogs...", Toast.LENGTH_SHORT).show();
+        Map<String, String> body = new HashMap<>();
+        body.put("url", url);
+        String token = preferences.getString("discogs_token", "");
+        if (!token.isEmpty()) body.put("discogs_token", token);
+
+        apiService.fetchDiscogsData(body).enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                isFetching = false;
+                if (response.isSuccessful() && response.body() != null) {
+                    Map<String, Object> data = response.body();
+                    if (data.containsKey("error")) {
+                        Toast.makeText(EntryFormActivity.this, "Error Discogs: " + data.get("error"), Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    processFetchedData(data, "title", null);
+                    Toast.makeText(EntryFormActivity.this, "Datos cargados desde Discogs", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(EntryFormActivity.this, "No se pudieron obtener datos automáticos", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                isFetching = false;
+                if (ApiClient.switchToNextUrl()) {
+                    apiService = ApiClient.getApiService();
+                } else {
+                    Toast.makeText(EntryFormActivity.this, "Error de conexión al obtener datos", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void fetchWikipediaData(String url) {
+        Toast.makeText(this, "Obteniendo datos de Wikipedia...", Toast.LENGTH_SHORT).show();
+        Map<String, String> body = new HashMap<>();
+        body.put("url", url);
+
+        apiService.fetchWikipediaData(body).enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                isFetching = false;
+                if (response.isSuccessful() && response.body() != null) {
+                    processFetchedData(response.body(), "page_title", "extract");
+                    Toast.makeText(EntryFormActivity.this, "Datos cargados desde Wikipedia", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(EntryFormActivity.this, "No se pudieron obtener datos automáticos", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                isFetching = false;
+                if (ApiClient.switchToNextUrl()) {
+                    apiService = ApiClient.getApiService();
+                } else {
+                    Toast.makeText(EntryFormActivity.this, "Error de conexión al obtener datos", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void fetchBooksData(String url) {
+        Toast.makeText(this, "Obteniendo datos del libro...", Toast.LENGTH_SHORT).show();
+        Map<String, String> body = new HashMap<>();
+        body.put("url", url);
+        String apiKey = preferences.getString("google_books_api_key", "");
+        if (!apiKey.isEmpty()) body.put("api_key", apiKey);
+
+        apiService.fetchBooksData(body).enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                isFetching = false;
+                if (response.isSuccessful() && response.body() != null) {
+                    Map<String, Object> data = response.body();
+                    if (data.containsKey("error")) {
+                        Toast.makeText(EntryFormActivity.this, "Error: " + data.get("error"), Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    processFetchedData(data, "title", "description");
+                    Toast.makeText(EntryFormActivity.this, "Datos cargados desde Google Books", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(EntryFormActivity.this, "No se pudieron obtener datos automáticos", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                isFetching = false;
+                if (ApiClient.switchToNextUrl()) {
+                    apiService = ApiClient.getApiService();
+                } else {
+                    Toast.makeText(EntryFormActivity.this, "Error de conexión al obtener datos", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
     private void autoSelectCategoryByMediaType(String mediaType) {
-        // Buscar la categoría "Cine" (asumiendo que existe)
+        // Buscar la categoría Cine
         for (Category cat : categories) {
             if (cat.getName().equalsIgnoreCase("Cine")) {
                 autoCompleteCategory.setText(cat.getName(), false);
                 // Cargar subcategorías de Cine
-                loadSubcategoriesAndSelect(cat.getId(), mediaType);
-                break;
+                String targetSubcat = "movie".equals(mediaType) ? "Película" : "Serie";
+                loadSubcategoriesAndSelectByName(cat.getId(), targetSubcat);
+                return;
             }
         }
+        // Si no se encontró, el usuario puede seleccionar manualmente
     }
 
-    private void loadSubcategoriesAndSelect(int categoryId, String mediaType) {
+    private void autoSelectCategoryAndSubcategory(String categoryName, String subcategoryName) {
+        // Buscar la categoría por nombre
+        for (Category cat : categories) {
+            if (cat.getName().equalsIgnoreCase(categoryName)) {
+                autoCompleteCategory.setText(cat.getName(), false);
+                // Cargar subcategorías y seleccionar la que coincida
+                loadSubcategoriesAndSelectByName(cat.getId(), subcategoryName);
+                return;
+            }
+        }
+        // Si no se encontró, el usuario puede seleccionar manualmente
+    }
+
+    private void loadSubcategoriesAndSelectByName(int categoryId, String targetSubcategoryName) {
         apiService.getSubcategories(categoryId).enqueue(new Callback<List<Subcategory>>() {
             @Override
             public void onResponse(Call<List<Subcategory>> call, Response<List<Subcategory>> response) {
@@ -240,10 +454,9 @@ public class EntryFormActivity extends AppCompatActivity {
                             android.R.layout.simple_dropdown_item_1line, subcategoryNames);
                     autoCompleteSubcategory.setAdapter(subcategoryAdapter);
 
-                    // Seleccionar subcategoría según media_type
-                    String targetSubcat = "movie".equals(mediaType) ? "Película" : "Serie";
+                    // Seleccionar la subcategoría que coincida
                     for (Subcategory sub : subcategories) {
-                        if (sub.getName().equalsIgnoreCase(targetSubcat)) {
+                        if (sub.getName().equalsIgnoreCase(targetSubcategoryName)) {
                             autoCompleteSubcategory.setText(sub.getName(), false);
                             break;
                         }
@@ -253,7 +466,7 @@ public class EntryFormActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Subcategory>> call, Throwable t) {
-                // Si falla, no pasa nada, el usuario puede seleccionar manualmente
+                // Si falla, ell usuario puede seleccionar manualmente
             }
         });
     }
@@ -263,6 +476,35 @@ public class EntryFormActivity extends AppCompatActivity {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_dropdown_item_1line, statuses);
         autoCompleteStatus.setAdapter(adapter);
+    }
+
+    // Convierte texto de estado a su clave interna
+    private String statusToKey(String text) {
+        switch (text) {
+            case "Pendiente": return "pendiente";
+            case "En progreso": return "en_progreso";
+            case "Completado": return "completado";
+            case "Abandonado": return "abandonado";
+            default: return null;
+        }
+    }
+
+    /** Convierte clave interna a texto visible */
+    private String keyToStatusDisplay(String key) {
+        switch (key) {
+            case "pendiente": return "Pendiente";
+            case "en_progreso": return "En progreso";
+            case "completado": return "Completado";
+            case "abandonado": return "Abandonado";
+            default: return "Pendiente";
+        }
+    }
+
+    // Establece la URL sin disparar el TextWatcher 
+    private void setUrlSilently(String url) {
+        isLoadingForEdit = true;
+        etUrl.setText(url);
+        isLoadingForEdit = false;
     }
 
     private void loadCategories() {
@@ -281,6 +523,7 @@ public class EntryFormActivity extends AppCompatActivity {
                     autoCompleteCategory.setAdapter(categoryAdapter);
 
                     autoCompleteCategory.setOnItemClickListener((parent, view, position, id) -> {
+                        formModified = true;
                         loadSubcategories(categories.get(position).getId());
                     });
                 }
@@ -354,14 +597,8 @@ public class EntryFormActivity extends AppCompatActivity {
             }
         }
 
-        String statusValue;
-        switch (statusName) {
-            case "Pendiente": statusValue = "pendiente"; break;
-            case "En progreso": statusValue = "en_progreso"; break;
-            case "Completado": statusValue = "completado"; break;
-            case "Abandonado": statusValue = "abandonado"; break;
-            default: statusValue = "pendiente";
-        }
+        String statusValue = statusToKey(statusName);
+        if (statusValue == null) statusValue = "pendiente";
 
         String url = etUrl.getText().toString().trim();
         String notes = etNotes.getText().toString().trim();
@@ -387,9 +624,22 @@ public class EntryFormActivity extends AppCompatActivity {
         entryData.put("status", statusValue);
         if (description != null) entryData.put("description", description);
 
-        // Incluir field_values si hay pendientes del fetch-imdb
+        // Incluir image_url si hay pendiente del fetch
+        if (pendingImageUrl != null && !pendingImageUrl.isEmpty()) {
+            entryData.put("image_url", pendingImageUrl);
+        }
+
+        // Incluir field_values si hay pendientes del fetch
         if (pendingFieldValues != null && !pendingFieldValues.isEmpty()) {
             entryData.put("field_values", pendingFieldValues);
+        }
+
+        // Incluir completed_date si el campo está visible y relleno
+        if (layoutCompletedDate.getVisibility() == View.VISIBLE) {
+            String completedDate = etCompletedDate.getText().toString().trim();
+            if (!completedDate.isEmpty()) {
+                entryData.put("completed_date", completedDate);
+            }
         }
 
         Call<Entry> call;
@@ -402,8 +652,12 @@ public class EntryFormActivity extends AppCompatActivity {
         call.enqueue(new Callback<Entry>() {
             @Override
             public void onResponse(Call<Entry> call, Response<Entry> response) {
+                if (response.code() == 401 || response.code() == 403) {
+                    goToLogin(); return;
+                }
                 if (response.isSuccessful()) {
                     Toast.makeText(EntryFormActivity.this, "Entrada guardada", Toast.LENGTH_SHORT).show();
+                    formModified = false;
                     finish();
                 } else {
                     Toast.makeText(EntryFormActivity.this, "Error al guardar", Toast.LENGTH_SHORT).show();
@@ -422,6 +676,14 @@ public class EntryFormActivity extends AppCompatActivity {
         });
     }
 
+    private void goToLogin() {
+        ApiClient.clearSession(this);
+        Intent intent = new Intent(EntryFormActivity.this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+
     private void loadEntryForEdit(int entryId) {
         apiService.getEntry(entryId).enqueue(new Callback<Entry>() {
             @Override
@@ -432,40 +694,43 @@ public class EntryFormActivity extends AppCompatActivity {
 
                     if (entry.getCategoryName() != null) {
                         autoCompleteCategory.setText(entry.getCategoryName(), false);
+                        // no se dispara el listener
+                        // cargamos las subcategorias a mano
+                        for (Category cat : categories) {
+                            if (cat.getName().equals(entry.getCategoryName())) {
+                                if (entry.getSubcategoryName() != null) {
+                                    loadSubcategoriesAndSelectByName(cat.getId(), entry.getSubcategoryName());
+                                } else {
+                                    loadSubcategories(cat.getId());
+                                }
+                                break;
+                            }
+                        }
                     }
 
                     if (entry.getStatus() != null) {
-                        String[] statuses = {"Pendiente", "En progreso", "Completado", "Abandonado"};
-                        for (String s : statuses) {
-                            String statusKey;
-                            switch (s) {
-                                case "Pendiente": statusKey = "pendiente"; break;
-                                case "En progreso": statusKey = "en_progreso"; break;
-                                case "Completado": statusKey = "completado"; break;
-                                case "Abandonado": statusKey = "abandonado"; break;
-                                default: statusKey = "";
-                            }
-                            if (statusKey.equals(entry.getStatus())) {
-                                autoCompleteStatus.setText(s, false);
-                                break;
+                        String displayStatus = keyToStatusDisplay(entry.getStatus());
+                        autoCompleteStatus.setText(displayStatus, false);
+
+                        // Si el estado es completado o abandonado, mostrar el campo de fecha
+                        if ("completado".equals(entry.getStatus()) || "abandonado".equals(entry.getStatus())) {
+                            layoutCompletedDate.setVisibility(View.VISIBLE);
+                            // Cargar completed_date si existe
+                            if (entry.getCompletedDate() != null && !entry.getCompletedDate().isEmpty()) {
+                                etCompletedDate.setText(entry.getCompletedDate());
                             }
                         }
                     }
 
                     if (entry.getDescription() != null) {
                         String desc = entry.getDescription();
-                        // Si la description contiene una URL con nuestro formato, separarla
+                        // Si la description contiene una URL con nuestro formato, se separa
                         if (desc.startsWith("URL: ")) {
                             int endOfUrl = desc.indexOf("\n\n");
-                            if (endOfUrl != -1) {
-                                String urlPart = desc.substring(5, endOfUrl); // Quitar "URL: "
-                                String notesPart = desc.substring(endOfUrl + 2);
-                                etUrl.setText(urlPart);
-                                etNotes.setText(notesPart);
-                            } else {
-                                // Solo hay URL, sin notas
-                                etUrl.setText(desc.substring(5));
-                            }
+                            String urlPart = endOfUrl != -1 ? desc.substring(5, endOfUrl) : desc.substring(5);
+                            String notesPart = endOfUrl != -1 ? desc.substring(endOfUrl + 2) : "";
+                            setUrlSilently(urlPart);
+                            if (!notesPart.isEmpty()) etNotes.setText(notesPart);
                         } else {
                             etNotes.setText(desc);
                         }
