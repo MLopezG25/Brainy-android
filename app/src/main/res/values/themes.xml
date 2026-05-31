@@ -25,6 +25,7 @@
         <!-- Fondo -->
         <item name="android:colorBackground">@color/golden_background</item>
         <item name="colorOnBackground">@color/golden_on_background</item>
+        <item name="android:windowBackground">@drawable/bg_gradient</item>
 
         <!-- Surface -->
         <item name="colorSurface">@color/golden_surface</item>
@@ -43,10 +44,10 @@
     </style>
 
     <style name="Theme.Brainy" parent="Base.Theme.Brainy">
-        <!-- Transiciones entre actividades -->
-        <item name="android:activityOpenEnterAnimation">@anim/slide_left</item>
-        <item name="android:activityOpenExitAnimation">@anim/fade_out</item>
-        <item name="android:activityCloseEnterAnimation">@anim/fade_in</item>
-        <item name="android:activityCloseExitAnimation">@anim/slide_right</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <!-- Barra de estado clara con iconos/texto oscuros -->
+        <item name="android:statusBarColor">@color/golden_background</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
+
 </resources>

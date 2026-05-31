@@ -4,15 +4,15 @@
     <item android:top="-2dp">
         <shape android:shape="rectangle">
             <gradient
-                android:startColor="#1A000000"
+                android:startColor="#33FFFFFF"
                 android:endColor="#00000000"
                 android:angle="90" />
         </shape>
     </item>
-    <!-- Fondo igual que golden_background (crema) -->
+    <!-- Fondo igual que el fondo oscuro de la app -->
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/golden_background" />
+            <solid android:color="@color/golden_dark_background" />
         </shape>
     </item>
 </layer-list>

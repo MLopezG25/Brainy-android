@@ -1,47 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Primario marrón -->
+    <color name="golden_primary">#8B6F47</color>
+    <color name="golden_primary_light">#F2E6C9</color>
+    <color name="golden_primary_dark">#5C4A2E</color>
+    <color name="golden_on_primary">#FFFFFFFF</color>
 
-    <!-- Dorado for Material 3 -->
-    <color name="golden_primary">#FFD700</color>
-    <color name="golden_primary_light">#FFF8E0</color>
-    <color name="golden_primary_dark">#B8960A</color>
-    <color name="golden_on_primary">#FF1A1A1A</color>
-
+    <!-- Secundario amarillo mostaza -->
     <color name="golden_secondary">#D4A843</color>
-    <color name="golden_secondary_light">#FFF3D6</color>
+    <color name="golden_secondary_light">#F8EDD0</color>
     <color name="golden_secondary_dark">#9E7A2E</color>
     <color name="golden_on_secondary">#FFFFFFFF</color>
 
-    <color name="golden_tertiary">#FF8C00</color>
-    <color name="golden_tertiary_light">#FFF0CC</color>
-    <color name="golden_tertiary_dark">#CC7000</color>
+    <!-- Terciario dorado -->
+    <color name="golden_tertiary">#C4912E</color>
+    <color name="golden_tertiary_light">#F2E0C0</color>
+    <color name="golden_tertiary_dark">#8A641E</color>
     <color name="golden_on_tertiary">#FFFFFFFF</color>
 
+    <!-- Error -->
     <color name="golden_error">#BA1A1A</color>
     <color name="golden_on_error">#FFFFFFFF</color>
 
-    <color name="golden_background">#FFFBF8</color>
-    <color name="golden_on_background">#FF1C1B1A</color>
-    <color name="golden_surface">#FFFFF8F0</color>
-    <color name="golden_on_surface">#FF1C1B1A</color>
-    <color name="golden_surface_variant">#FFEDE0CE</color>
-    <color name="golden_on_surface_variant">#FF4D4539</color>
-    <color name="golden_outline">#FF7F7567</color>
+    <!-- Fondo crema suave -->
+    <color name="golden_background">#FFF5EDE0</color>
+    <color name="golden_on_background">#FF2C241A</color>
+    <color name="golden_surface">#FFFFF5EB</color>
+    <color name="golden_on_surface">#FF2C241A</color>
+    <color name="golden_surface_variant">#FFEDE4D6</color>
+    <color name="golden_on_surface_variant">#FF4D4236</color>
+    <color name="golden_outline">#FF7F7263</color>
     <color name="golden_outline_variant">#FFD1C5B4</color>
 
-    <color name="golden_inverse_surface">#FF312F2D</color>
+    <!-- Inverse -->
+    <color name="golden_inverse_surface">#FF312A22</color>
     <color name="golden_inverse_on_surface">#FFF5F0E9</color>
     <color name="golden_inverse_primary">#FFEAC158</color>
 
-    <color name="golden_dark_background">#FF1C1B1A</color>
-    <color name="golden_dark_on_background">#FFE6E1DA</color>
-    <color name="golden_dark_surface">#FF242321</color>
-    <color name="golden_dark_on_surface">#FFE6E1DA</color>
-    <color name="golden_dark_surface_variant">#FF4D4539</color>
+    <!-- Tema oscuro -->
+    <color name="golden_dark_background">#FF1C1814</color>
+    <color name="golden_dark_on_background">#FFE6E0D8</color>
+    <color name="golden_dark_surface">#FF24211C</color>
+    <color name="golden_dark_on_surface">#FFE6E0D8</color>
+    <color name="golden_dark_surface_variant">#FF4D4236</color>
     <color name="golden_dark_on_surface_variant">#FFD1C5B4</color>
-    <color name="golden_dark_primary">#FFEAC158</color>
+    <color name="golden_dark_primary">#FFD4B87A</color>
     <color name="golden_dark_on_primary">#FF3D2E00</color>
     <color name="golden_dark_secondary">#FFD9BA6E</color>
     <color name="golden_dark_on_secondary">#FF352800</color>
@@ -50,8 +53,8 @@
     <color name="golden_dark_error">#FFFFB4AB</color>
     <color name="golden_dark_on_error">#FF690005</color>
     <color name="golden_dark_outline">#FF9B8F80</color>
-    <color name="golden_dark_inverse_surface">#FFE6E1DA</color>
-    <color name="golden_dark_inverse_on_surface">#FF312F2D</color>
+    <color name="golden_dark_inverse_surface">#FFE6E0D8</color>
+    <color name="golden_dark_inverse_on_surface">#FF312A22</color>
     <color name="golden_dark_inverse_primary">#FF7A6100</color>
 
     <!-- Color para enlaces URL en el detalle de entrada -->

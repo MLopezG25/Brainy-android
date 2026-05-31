@@ -47,6 +47,18 @@
             android:name=".activities.ProfileActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".activities.TimelineActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.SettingsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.ImportActivity"
+            android:exported="false" />
+
         <!-- Actividad para recibir contenido compartido desde otras apps -->
         <activity
             android:name=".activities.ShareReceiverActivity"
