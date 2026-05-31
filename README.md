@@ -43,7 +43,7 @@ El codigo del backend esta en: [github.com/MLopezG25/Brainy](https://github.com/
 
 ## Tecnologias
 
-- Kotlin + Java como lenguaje principal
+- Java como lenguaje principal
 - Retrofit para el cliente HTTP
 - Gson para el parseo de JSON
 - ViewBinding para el binding de vistas
