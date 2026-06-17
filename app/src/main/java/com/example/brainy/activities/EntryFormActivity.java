@@ -511,6 +511,10 @@ public class EntryFormActivity extends AppCompatActivity {
         apiService.getCategories().enqueue(new Callback<List<Category>>() {
             @Override
             public void onResponse(Call<List<Category>> call, Response<List<Category>> response) {
+                if (response.code() == 401 || response.code() == 403) {
+                    goToLogin();
+                    return;
+                }
                 if (response.isSuccessful() && response.body() != null) {
                     categories = response.body();
                     List<String> categoryNames = new ArrayList<>();
@@ -521,6 +525,10 @@ public class EntryFormActivity extends AppCompatActivity {
                     ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(EntryFormActivity.this,
                             android.R.layout.simple_dropdown_item_1line, categoryNames);
                     autoCompleteCategory.setAdapter(categoryAdapter);
+                    autoCompleteCategory.setThreshold(0);
+
+                    // Forzar que el dropdown se muestre al hacer clic en el campo
+                    autoCompleteCategory.setOnClickListener(v -> autoCompleteCategory.showDropDown());
 
                     autoCompleteCategory.setOnItemClickListener((parent, view, position, id) -> {
                         formModified = true;

@@ -238,9 +238,9 @@ public class ImportActivity extends AppCompatActivity {
                 entry.put("description", "Año: " + releaseDate);
             }
 
-            // Categoría: Música, Subcategoría: Álbum
-            entry.put("category_name", "Música");
-            entry.put("subcategory_name", "Álbum");
+            // Categoría: Musica, Subcategoría: Album (sin tilde para coincidir con seed_cats.py)
+            entry.put("category_name", "Musica");
+            entry.put("subcategory_name", "Album");
 
             String ownership = getValue(values, 8);
             if ("w".equals(ownership)) {

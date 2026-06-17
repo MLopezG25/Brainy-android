@@ -104,12 +104,13 @@
                             android:layout_height="wrap_content"
                             android:orientation="horizontal">
 
-                            <ImageButton
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnDecreaseColumns"
                                 android:layout_width="40dp"
                                 android:layout_height="40dp"
-                                android:background="?android:attr/selectableItemBackgroundBorderless"
-                                android:src="?android:attr/actionBarItemBackground" />
+                                android:text="−"
+                                android:textSize="18sp"
+                                style="@style/Widget.Material3.Button.TonalButton" />
 
                             <TextView
                                 android:id="@+id/tvColumnCount"
@@ -122,12 +123,13 @@
                                 android:textSize="18sp"
                                 android:textStyle="bold" />
 
-                            <ImageButton
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnIncreaseColumns"
                                 android:layout_width="40dp"
                                 android:layout_height="40dp"
-                                android:src="?android:attr/actionBarItemBackground"
-                                android:background="?android:attr/selectableItemBackgroundBorderless" />
+                                android:text="+"
+                                android:textSize="18sp"
+                                style="@style/Widget.Material3.Button.TonalButton" />
 
                         </LinearLayout>
 
