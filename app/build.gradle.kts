@@ -6,6 +6,10 @@ android {
     namespace = "com.example.brainy"
     compileSdk = 36
 
+    buildFeatures {
+        viewBinding = true
+    }
+
     defaultConfig {
         applicationId = "com.example.brainy"
         minSdk = 24
