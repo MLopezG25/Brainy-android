@@ -1,6 +1,7 @@
 package com.example.brainy.api;
 
 import com.example.brainy.api.models.Category;
+import com.example.brainy.api.models.ConnectionResponse;
 import com.example.brainy.api.models.Entry;
 import com.example.brainy.api.models.StatsResponse;
 import com.example.brainy.api.models.Subcategory;
@@ -22,7 +23,6 @@ import retrofit2.http.Query;
 public interface ApiService {
 
     // Autenticación
-
     @POST("api/login/")
     Call<Map<String, Object>> login(@Body Map<String, String> credentials);
 
@@ -36,7 +36,6 @@ public interface ApiService {
     Call<Map<String, Object>> me();
 
     // Categorías
-
     @GET("api/categories/")
     Call<List<Category>> getCategories();
 
@@ -44,7 +43,6 @@ public interface ApiService {
     Call<Category> getCategory(@Path("id") int id);
 
     // Subcategorías
-
     @GET("api/subcategories/")
     Call<List<Subcategory>> getSubcategories(@Query("category") Integer categoryId);
 
@@ -52,7 +50,6 @@ public interface ApiService {
     Call<Subcategory> getSubcategory(@Path("id") int id);
 
     // Entradas
-
     @GET("api/entries/")
     Call<List<Entry>> getEntries(
             @Query("search") String search,
@@ -75,15 +72,13 @@ public interface ApiService {
     Call<Void> deleteEntry(@Path("id") int id);
 
     // Tags
-
     @GET("api/tags/")
     Call<List<Tag>> getTags();
 
     @POST("api/tags/")
     Call<Tag> createTag(@Body Map<String, String> tagData);
 
-    // Timeline histórico
-
+    // Timeline
     @GET("api/timeline/")
     Call<List<TimelineYear>> getTimeline(
             @Query("category") Integer categoryId,
@@ -91,37 +86,43 @@ public interface ApiService {
     );
 
     // Estadísticas
-
     @GET("api/stats/")
     Call<StatsResponse> getStats();
 
     // Importación
-
     @POST("api/import/")
     Call<Map<String, Object>> importEntries(@Body List<Map<String, Object>> entries);
 
-    // Importación desde JSON (con nombres de categoría/subcategoría)
     @POST("api/import-json/")
     Call<Map<String, Object>> importJson(@Body List<Map<String, Object>> entries);
 
-    // Fetch IMDB data (proxy a TMDB desde el backend)
-
+    // APIs externas
     @POST("api/external/fetch-imdb/")
     Call<Map<String, Object>> fetchImdbData(@Body Map<String, String> body);
-
-    // Fetch Discogs data (proxy a Discogs API desde el backend)
 
     @POST("api/external/fetch-discogs/")
     Call<Map<String, Object>> fetchDiscogsData(@Body Map<String, String> body);
 
-    // Fetch Wikipedia data (proxy a Wikipedia API desde el backend)
-
     @POST("api/external/fetch-wikipedia/")
     Call<Map<String, Object>> fetchWikipediaData(@Body Map<String, String> body);
-
-    // Fetch Books data (proxy a Google Books API desde el backend)
 
     @POST("api/external/fetch-books/")
     Call<Map<String, Object>> fetchBooksData(@Body Map<String, String> body);
 
+    // Compartir listas
+    @POST("api/shares/")
+    Call<Map<String, Object>> createShare(@Body Map<String, Object> body);
+
+    @GET("api/shares/{token}/")
+    Call<Map<String, Object>> getShare(@Path("token") String token);
+
+    @POST("api/shares/import/")
+    Call<Map<String, Object>> importShare(@Body Map<String, String> body);
+
+    // Cruce de Caminos - Conexiones
+    @POST("api/connections/generate/")
+    Call<Map<String, Object>> generateConnections();
+
+    @GET("api/connections/{entryId}/")
+    Call<ConnectionResponse> getConnections(@Path("entryId") int entryId);
 }

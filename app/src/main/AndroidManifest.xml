@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permiso para llamar a la API del backend -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
@@ -15,7 +14,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Brainy"
         android:usesCleartextTraffic="true">
-        <!-- usasCleartextTraffic para poder conectar con HTTP (no HTTPS) en desarrollo -->
 
         <activity
             android:name=".activities.LoginActivity"
@@ -27,39 +25,16 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".activities.RegisterActivity"
-            android:exported="false" />
+        <activity android:name=".activities.RegisterActivity" android:exported="false" />
+        <activity android:name=".activities.MainActivity" android:exported="false" />
+        <activity android:name=".activities.EntryDetailActivity" android:exported="false" />
+        <activity android:name=".activities.EntryFormActivity" android:exported="false" />
+        <activity android:name=".activities.ProfileActivity" android:exported="false" />
+        <activity android:name=".activities.TimelineActivity" android:exported="false" />
+        <activity android:name=".activities.SettingsActivity" android:exported="false" />
+        <activity android:name=".activities.ImportActivity" android:exported="false" />
+        <activity android:name=".activities.ConnectionActivity" android:exported="false" />
 
-        <activity
-            android:name=".activities.MainActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".activities.EntryDetailActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".activities.EntryFormActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".activities.ProfileActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".activities.TimelineActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".activities.SettingsActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".activities.ImportActivity"
-            android:exported="false" />
-
-        <!-- Actividad para recibir contenido compartido desde otras apps -->
         <activity
             android:name=".activities.ShareReceiverActivity"
             android:exported="true"
