@@ -277,6 +277,16 @@
 
         </LinearLayout>
 
+        <!-- Botón Cruce de Caminos -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnConnections"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Cruce de Caminos"
+            android:icon="@android:drawable/ic_menu_gallery"
+            style="@style/Widget.Material3.Button.OutlinedButton" />
+
     </LinearLayout>
 
 </ScrollView>

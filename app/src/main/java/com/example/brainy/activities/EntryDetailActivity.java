@@ -66,6 +66,7 @@ public class EntryDetailActivity extends AppCompatActivity {
         chipUpdatedAt = findViewById(R.id.chipUpdatedAt);
         btnEdit = findViewById(R.id.btnEdit);
         btnDelete = findViewById(R.id.btnDelete);
+        MaterialButton btnConnections = findViewById(R.id.btnConnections);
         cardFieldValues = findViewById(R.id.cardFieldValues);
         cardNotes = findViewById(R.id.cardNotes);
         cardSource = findViewById(R.id.cardSource);
@@ -86,6 +87,12 @@ public class EntryDetailActivity extends AppCompatActivity {
         });
 
         btnDelete.setOnClickListener(v -> confirmDelete());
+
+        btnConnections.setOnClickListener(v -> {
+            Intent intent = new Intent(EntryDetailActivity.this, ConnectionActivity.class);
+            intent.putExtra("entry_id", entryId);
+            startActivity(intent);
+        });
     }
 
     private void confirmDelete() {
