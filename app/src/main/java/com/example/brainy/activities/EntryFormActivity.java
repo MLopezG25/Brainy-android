@@ -186,7 +186,7 @@ public class EntryFormActivity extends AppCompatActivity {
         Map<String, String> body = new HashMap<>();
         body.put("url", url);
         if (prefsKey != null) {
-            String credential = session.getSharedPreferences("brainy_prefs", MODE_PRIVATE).getString(prefsKey, "");
+            String credential = getSharedPreferences("brainy_prefs", MODE_PRIVATE).getString(prefsKey, "");
             if (!credential.isEmpty()) body.put(bodyKey, credential);
         }
 
