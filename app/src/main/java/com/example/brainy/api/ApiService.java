@@ -125,4 +125,8 @@ public interface ApiService {
 
     @GET("api/connections/{entryId}/")
     Call<ConnectionResponse> getConnections(@Path("entryId") int entryId);
+
+    // Modo "No sé qué ver" - entrada aleatoria pendiente
+    @GET("api/random/")
+    Call<Entry> getRandomEntry();
 }

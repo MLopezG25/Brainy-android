@@ -15,10 +15,7 @@
         android:theme="@style/Theme.Brainy"
         android:usesCleartextTraffic="true">
 
-        <activity
-            android:name=".activities.LoginActivity"
-            android:exported="true"
-            android:theme="@style/Theme.Brainy">
+        <activity android:name=".activities.LoginActivity" android:exported="true" android:theme="@style/Theme.Brainy">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -34,11 +31,9 @@
         <activity android:name=".activities.SettingsActivity" android:exported="false" />
         <activity android:name=".activities.ImportActivity" android:exported="false" />
         <activity android:name=".activities.ConnectionActivity" android:exported="false" />
+        <activity android:name=".activities.RandomActivity" android:exported="false" />
 
-        <activity
-            android:name=".activities.ShareReceiverActivity"
-            android:exported="true"
-            android:theme="@android:style/Theme.NoDisplay">
+        <activity android:name=".activities.ShareReceiverActivity" android:exported="true" android:theme="@android:style/Theme.NoDisplay">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -47,5 +42,4 @@
         </activity>
 
     </application>
-
 </manifest>
