@@ -13,6 +13,7 @@ import com.example.brainy.api.ApiClient;
 import com.example.brainy.api.ApiService;
 import com.example.brainy.api.models.Entry;
 import com.example.brainy.utils.StatusUtils;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.chip.Chip;
@@ -46,9 +47,23 @@ public class RandomActivity extends AppCompatActivity {
         chipStatus = findViewById(R.id.chipRandomStatus);
         btnRandom = findViewById(R.id.btnRandom);
 
+        setupBottomNav();
         btnRandom.setOnClickListener(v -> fetchRandom());
-
         fetchRandom();
+    }
+
+    private void setupBottomNav() {
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        bottomNav.setSelectedItemId(R.id.nav_random);
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_random) return true;
+            if (id == R.id.nav_hub) { startActivity(new Intent(this, MainActivity.class)); finish(); return true; }
+            if (id == R.id.nav_add) { startActivity(new Intent(this, EntryFormActivity.class)); return true; }
+            if (id == R.id.nav_timeline) { startActivity(new Intent(this, TimelineActivity.class)); finish(); return true; }
+            if (id == R.id.nav_profile) { startActivity(new Intent(this, ProfileActivity.class)); finish(); return true; }
+            return false;
+        });
     }
 
     private void fetchRandom() {
