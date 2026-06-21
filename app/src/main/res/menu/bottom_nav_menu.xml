@@ -9,6 +9,10 @@
         android:icon="@drawable/ic_add"
         android:title="Añadir" />
     <item
+        android:id="@+id/nav_random"
+        android:icon="@android:drawable/ic_menu_rotate"
+        android:title="¿Qué veo?" />
+    <item
         android:id="@+id/nav_timeline"
         android:icon="@drawable/ic_timeline"
         android:title="Historial" />

@@ -59,7 +59,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Animar entrada
         View root = findViewById(android.R.id.content);
         root.startAnimation(android.view.animation.AnimationUtils.loadAnimation(this, R.anim.fade_in));
 
@@ -82,46 +81,17 @@ public class MainActivity extends AppCompatActivity {
         });
         rvEntries.setAdapter(adapter);
 
-        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
-        bottomNav.setSelectedItemId(R.id.nav_hub);
-        bottomNav.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_hub) {
-                return true;
-            } else if (itemId == R.id.nav_add) {
-                Intent intent = new Intent(MainActivity.this, EntryFormActivity.class);
-                startActivity(intent);
-                return true;
-            } else if (itemId == R.id.nav_timeline) {
-                Intent intent = new Intent(MainActivity.this, TimelineActivity.class);
-                startActivity(intent);
-                finish();
-                return true;
-            } else if (itemId == R.id.nav_profile) {
-                Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
-                startActivity(intent);
+        setupBottomNav();
 
-                finish();
-                return true;
-            }
-            return false;
-        });
-
-        // TextWatcher para búsqueda, ignorar cambios durante inicialización
         etSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (isInitializing) return; // Ignorar durante inicialización
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (isInitializing) return;
                 searchHandler.removeCallbacks(searchRunnable);
-                     searchRunnable = () -> loadEntries();
+                searchRunnable = () -> loadEntries();
                 searchHandler.postDelayed(searchRunnable, 300);
             }
-
-            @Override
-            public void afterTextChanged(Editable s) {}
+            @Override public void afterTextChanged(Editable s) {}
         });
 
         setupStatusFilter();
@@ -133,7 +103,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (!isInitializing) {
-            // Recargar número de columnas desde preferencias (por si cambió en ajustes)
             int columns = preferences.getInt("grid_columns", 3);
             GridLayoutManager layoutManager = (GridLayoutManager) rvEntries.getLayoutManager();
             if (layoutManager != null && layoutManager.getSpanCount() != columns) {
@@ -142,6 +111,20 @@ public class MainActivity extends AppCompatActivity {
             }
             loadEntries();
         }
+    }
+
+    private void setupBottomNav() {
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        bottomNav.setSelectedItemId(R.id.nav_hub);
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_hub) return true;
+            if (id == R.id.nav_add) { startActivity(new Intent(this, EntryFormActivity.class)); return true; }
+            if (id == R.id.nav_random) { startActivity(new Intent(this, RandomActivity.class)); return true; }
+            if (id == R.id.nav_timeline) { startActivity(new Intent(this, TimelineActivity.class)); finish(); return true; }
+            if (id == R.id.nav_profile) { startActivity(new Intent(this, ProfileActivity.class)); finish(); return true; }
+            return false;
+        });
     }
 
     private void setupStatusFilter() {
@@ -153,36 +136,20 @@ public class MainActivity extends AppCompatActivity {
 
         spinnerStatusFilter.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
-            public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
-                selectedStatus = statusToKey(statuses[position]);
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                selectedStatus = position == 0 ? null : statuses[position].toLowerCase().replace(" ", "_");
                 if (!isInitializing) loadEntries();
             }
-
             @Override
-            public void onNothingSelected(android.widget.AdapterView<?> parent) {
-                selectedStatus = null;
-            }
+            public void onNothingSelected(android.widget.AdapterView<?> parent) { selectedStatus = null; }
         });
-    }
-
-    // Convierte texto de estado a su clave interna, o null para "Todos"
-    private String statusToKey(String text) {
-        switch (text) {
-            case "Pendiente": return "pendiente";
-            case "En progreso": return "en_progreso";
-            case "Completado": return "completado";
-            case "Abandonado": return "abandonado";
-            default: return null; // "Estado"
-        }
     }
 
     private void loadCategories() {
         apiService.getCategories().enqueue(new Callback<List<Category>>() {
             @Override
             public void onResponse(Call<List<Category>> call, Response<List<Category>> response) {
-                if (response.code() == 401 || response.code() == 403) {
-                    goToLogin(); return;
-                }
+                if (response.code() == 401 || response.code() == 403) { goToLogin(); return; }
                 if (response.isSuccessful() && response.body() != null) {
                     categories = response.body();
                     setupCategorySpinner();
@@ -190,50 +157,33 @@ public class MainActivity extends AppCompatActivity {
                     loadEntries();
                 }
             }
-
             @Override
             public void onFailure(Call<List<Category>> call, Throwable t) {
-                if (ApiClient.switchToNextUrl()) {
-                    apiService = ApiClient.getApiService();
-                    loadCategories();
-                } else {
-                    isInitializing = false;
-                    loadEntries();
-                }
+                if (ApiClient.switchToNextUrl()) { apiService = ApiClient.getApiService(); loadCategories(); }
+                else { isInitializing = false; loadEntries(); }
             }
         });
     }
 
     private void setupCategorySpinner() {
-        List<String> categoryNames = new ArrayList<>();
-        categoryNames.add("Categoría");
-        for (Category cat : categories) categoryNames.add(cat.getName());
+        List<String> names = new ArrayList<>();
+        names.add("Categoría");
+        for (Category cat : categories) names.add(cat.getName());
 
         android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, categoryNames);
+                android.R.layout.simple_spinner_item, names);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerCategoryFilter.setAdapter(adapter);
 
         spinnerCategoryFilter.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
-            public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
-                String text = categoryNames.get(position);
-                selectedCategoryId = text.equals("Categoría") ? null : findCategoryIdByName(text);
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int pos, long id) {
+                selectedCategoryId = pos == 0 ? null : categories.get(pos - 1).getId();
                 if (!isInitializing) loadEntries();
             }
-
             @Override
-            public void onNothingSelected(android.widget.AdapterView<?> parent) {
-                selectedCategoryId = null;
-            }
+            public void onNothingSelected(android.widget.AdapterView<?> parent) { selectedCategoryId = null; }
         });
-    }
-
-    private Integer findCategoryIdByName(String name) {
-        for (Category cat : categories) {
-            if (cat.getName().equals(name)) return cat.getId();
-        }
-        return null;
     }
 
     private void loadTags() {
@@ -245,78 +195,50 @@ public class MainActivity extends AppCompatActivity {
                     setupTagFilter();
                 }
             }
-
             @Override
-            public void onFailure(Call<List<Tag>> call, Throwable t) {
-                // Si falla, no pasa nada, el filtro de tags simplemente no aparece
-            }
+            public void onFailure(Call<List<Tag>> call, Throwable t) {}
         });
     }
 
     private void setupTagFilter() {
-        List<String> tagNames = new ArrayList<>();
-        tagNames.add("Tag");
-        for (Tag tag : tags) tagNames.add(tag.getName());
+        List<String> names = new ArrayList<>();
+        names.add("Tag");
+        for (Tag tag : tags) names.add(tag.getName());
 
         android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, tagNames);
+                android.R.layout.simple_spinner_item, names);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerTagFilter.setAdapter(adapter);
 
         spinnerTagFilter.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
-            public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
-                if (position == 0) {
-                    selectedTagIds = null;
-                } else {
-                    Tag selectedTag = tags.get(position - 1);
-                    selectedTagIds = String.valueOf(selectedTag.getId());
-                }
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int pos, long id) {
+                selectedTagIds = pos == 0 ? null : String.valueOf(tags.get(pos - 1).getId());
                 if (!isInitializing) loadEntries();
             }
-
             @Override
-            public void onNothingSelected(android.widget.AdapterView<?> parent) {
-                selectedTagIds = null;
-            }
+            public void onNothingSelected(android.widget.AdapterView<?> parent) { selectedTagIds = null; }
         });
     }
 
     private void loadEntries() {
         String search = etSearch.getText().toString().trim();
-        String searchParam = search.isEmpty() ? null : search;
-
-        apiService.getEntries(searchParam, selectedCategoryId, selectedStatus, "-updated_at", selectedTagIds)
+        apiService.getEntries(search.isEmpty() ? null : search, selectedCategoryId, selectedStatus, "-updated_at", selectedTagIds)
                 .enqueue(new Callback<List<Entry>>() {
                     @Override
                     public void onResponse(Call<List<Entry>> call, Response<List<Entry>> response) {
-                        if (response.code() == 401 || response.code() == 403) {
-                            goToLogin(); return;
-                        }
+                        if (response.code() == 401 || response.code() == 403) { goToLogin(); return; }
                         if (response.isSuccessful() && response.body() != null) {
                             entries = response.body();
                             adapter.updateEntries(entries);
-
-                            if (entries.isEmpty()) {
-                                tvEmpty.setVisibility(View.VISIBLE);
-                                rvEntries.setVisibility(View.GONE);
-                            } else {
-                                tvEmpty.setVisibility(View.GONE);
-                                rvEntries.setVisibility(View.VISIBLE);
-                            }
+                            tvEmpty.setVisibility(entries.isEmpty() ? View.VISIBLE : View.GONE);
+                            rvEntries.setVisibility(entries.isEmpty() ? View.GONE : View.VISIBLE);
                         }
                     }
-
                     @Override
                     public void onFailure(Call<List<Entry>> call, Throwable t) {
-                        if (ApiClient.switchToNextUrl()) {
-                            apiService = ApiClient.getApiService();
-                            loadEntries();
-                        } else {
-                            tvEmpty.setVisibility(View.VISIBLE);
-                            tvEmpty.setText("Error al cargar las entradas");
-                            rvEntries.setVisibility(View.GONE);
-                        }
+                        if (ApiClient.switchToNextUrl()) { apiService = ApiClient.getApiService(); loadEntries(); }
+                        else { tvEmpty.setVisibility(View.VISIBLE); tvEmpty.setText("Error al cargar"); rvEntries.setVisibility(View.GONE); }
                     }
                 });
     }

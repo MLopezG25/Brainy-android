@@ -3,13 +3,11 @@ package com.example.brainy.activities;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityOptionsCompat;
 
 import com.example.brainy.R;
 import com.example.brainy.api.ApiClient;
@@ -47,41 +45,46 @@ public class ProfileActivity extends AppCompatActivity {
 
         MaterialButton buttonSettings = findViewById(R.id.button_settings);
         buttonSettings.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
-        buttonSettings.setOnClickListener(v -> {
-            Intent intent = new Intent(ProfileActivity.this, SettingsActivity.class);
-            startActivity(intent);
-        });
+        buttonSettings.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
 
         MaterialButton buttonLogout = findViewById(R.id.button_logout);
         buttonLogout.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_in));
         buttonLogout.setOnClickListener(v -> logout());
 
-        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
-        bottomNav.setSelectedItemId(R.id.nav_profile);
-        bottomNav.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_profile) {
-                return true;
-            } else if (itemId == R.id.nav_hub) {
-                Intent intent = new Intent(ProfileActivity.this, MainActivity.class);
-                startActivity(intent);
-                finish();
-                return true;
-            } else if (itemId == R.id.nav_timeline) {
-                Intent intent = new Intent(ProfileActivity.this, TimelineActivity.class);
-                startActivity(intent);
-                finish();
-                return true;
-            } else if (itemId == R.id.nav_add) {
-                Intent intent = new Intent(ProfileActivity.this, EntryFormActivity.class);
-                startActivity(intent);
-                return true;
-            }
-            return false;
-        });
+        setupBottomNav();
 
         loadUserInfo();
         loadStats();
+    }
+
+    private void setupBottomNav() {
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        bottomNav.setSelectedItemId(R.id.nav_profile);
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_profile) return true;
+            if (id == R.id.nav_hub) { startActivity(new Intent(this, MainActivity.class)); finish(); return true; }
+            if (id == R.id.nav_add) { startActivity(new Intent(this, EntryFormActivity.class)); return true; }
+            if (id == R.id.nav_random) { startActivity(new Intent(this, RandomActivity.class)); return true; }
+            if (id == R.id.nav_timeline) { startActivity(new Intent(this, TimelineActivity.class)); finish(); return true; }
+            return false;
+        });
+    }
+
+    private void exportLibrary() {
+        Toast.makeText(this, "Descargando biblioteca...", Toast.LENGTH_SHORT).show();
+        apiService.getStats().enqueue(new Callback<StatsResponse>() {
+            @Override
+            public void onResponse(Call<StatsResponse> call, Response<StatsResponse> response) {
+                Toast.makeText(ProfileActivity.this,
+                        "Visita: " + ApiClient.getActiveBaseUrl() + "api/export/ (logueado en navegador)",
+                        Toast.LENGTH_LONG).show();
+            }
+            @Override
+            public void onFailure(Call<StatsResponse> call, Throwable t) {
+                Toast.makeText(ProfileActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void loadUserInfo() {
@@ -105,15 +108,10 @@ public class ProfileActivity extends AppCompatActivity {
                     textAbandonado.setText(String.valueOf(stats.getAbandonado()));
                 }
             }
-
             @Override
             public void onFailure(Call<StatsResponse> call, Throwable t) {
-                if (ApiClient.switchToNextUrl()) {
-                    apiService = ApiClient.getApiService();
-                    loadStats();
-                } else {
-                    Toast.makeText(ProfileActivity.this, "Error al cargar estadísticas", Toast.LENGTH_SHORT).show();
-                }
+                if (ApiClient.switchToNextUrl()) { apiService = ApiClient.getApiService(); loadStats(); }
+                else Toast.makeText(ProfileActivity.this, "Error al cargar estadísticas", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -121,16 +119,9 @@ public class ProfileActivity extends AppCompatActivity {
     private void logout() {
         apiService.logout().enqueue(new Callback<Map<String, Object>>() {
             @Override
-            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
-                // Limpiamos las preferencias y volvemos al login
-                logoutAndGoToLogin();
-            }
-
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) { logoutAndGoToLogin(); }
             @Override
-            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                // Aunque falle la red, limpiamos las preferencias y volvemos al login
-                logoutAndGoToLogin();
-            }
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) { logoutAndGoToLogin(); }
         });
     }
 
