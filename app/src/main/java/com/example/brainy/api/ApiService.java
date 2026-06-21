@@ -22,7 +22,6 @@ import retrofit2.http.Query;
 
 public interface ApiService {
 
-    // Autenticación
     @POST("api/login/")
     Call<Map<String, Object>> login(@Body Map<String, String> credentials);
 
@@ -35,21 +34,18 @@ public interface ApiService {
     @GET("api/me/")
     Call<Map<String, Object>> me();
 
-    // Categorías
     @GET("api/categories/")
     Call<List<Category>> getCategories();
 
     @GET("api/categories/{id}/")
     Call<Category> getCategory(@Path("id") int id);
 
-    // Subcategorías
     @GET("api/subcategories/")
     Call<List<Subcategory>> getSubcategories(@Query("category") Integer categoryId);
 
     @GET("api/subcategories/{id}/")
     Call<Subcategory> getSubcategory(@Path("id") int id);
 
-    // Entradas
     @GET("api/entries/")
     Call<List<Entry>> getEntries(
             @Query("search") String search,
@@ -71,32 +67,27 @@ public interface ApiService {
     @DELETE("api/entries/{id}/")
     Call<Void> deleteEntry(@Path("id") int id);
 
-    // Tags
     @GET("api/tags/")
     Call<List<Tag>> getTags();
 
     @POST("api/tags/")
     Call<Tag> createTag(@Body Map<String, String> tagData);
 
-    // Timeline
     @GET("api/timeline/")
     Call<List<TimelineYear>> getTimeline(
             @Query("category") Integer categoryId,
             @Query("status") String status
     );
 
-    // Estadísticas
     @GET("api/stats/")
     Call<StatsResponse> getStats();
 
-    // Importación
     @POST("api/import/")
     Call<Map<String, Object>> importEntries(@Body List<Map<String, Object>> entries);
 
     @POST("api/import-json/")
     Call<Map<String, Object>> importJson(@Body List<Map<String, Object>> entries);
 
-    // APIs externas
     @POST("api/external/fetch-imdb/")
     Call<Map<String, Object>> fetchImdbData(@Body Map<String, String> body);
 
@@ -109,7 +100,6 @@ public interface ApiService {
     @POST("api/external/fetch-books/")
     Call<Map<String, Object>> fetchBooksData(@Body Map<String, String> body);
 
-    // Compartir listas
     @POST("api/shares/")
     Call<Map<String, Object>> createShare(@Body Map<String, Object> body);
 
@@ -119,14 +109,15 @@ public interface ApiService {
     @POST("api/shares/import/")
     Call<Map<String, Object>> importShare(@Body Map<String, String> body);
 
-    // Cruce de Caminos - Conexiones
     @POST("api/connections/generate/")
     Call<Map<String, Object>> generateConnections();
 
     @GET("api/connections/{entryId}/")
     Call<ConnectionResponse> getConnections(@Path("entryId") int entryId);
 
-    // Modo "No sé qué ver" - entrada aleatoria pendiente
     @GET("api/random/")
     Call<Entry> getRandomEntry();
+
+    @GET("api/stremio/{entryId}/")
+    Call<Map<String, Object>> getStremioLink(@Path("entryId") int entryId);
 }

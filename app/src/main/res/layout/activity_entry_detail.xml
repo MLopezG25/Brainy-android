@@ -15,7 +15,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Imagen del póster tipo card -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/posterContainer"
             android:layout_width="320dp"
@@ -42,7 +41,6 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Tarjeta principal: título + chips -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -165,7 +163,6 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Tarjeta de field_values (solo visible si hay) -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardFieldValues"
             android:layout_width="match_parent"
@@ -185,7 +182,6 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Tarjeta de notas (solo visible si hay notas del usuario) -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardNotes"
             android:layout_width="match_parent"
@@ -206,7 +202,6 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Tarjeta de fuente/origen (solo si hay URL) -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardSource"
             android:layout_width="match_parent"
@@ -247,7 +242,6 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Botones de acción -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -277,7 +271,6 @@
 
         </LinearLayout>
 
-        <!-- Botón Cruce de Caminos -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnConnections"
             android:layout_width="match_parent"
@@ -286,6 +279,16 @@
             android:text="Cruce de Caminos"
             android:icon="@android:drawable/ic_menu_gallery"
             style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStremio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="24dp"
+            android:text="Ver en Stremio"
+            android:icon="@android:drawable/ic_menu_send"
+            style="@style/Widget.Material3.Button.TonalButton" />
 
     </LinearLayout>
 

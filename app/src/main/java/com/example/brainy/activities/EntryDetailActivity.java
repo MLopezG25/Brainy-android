@@ -40,7 +40,7 @@ public class EntryDetailActivity extends AppCompatActivity {
     private ImageView ivDetailPoster;
     private TextView tvTitle, tvNotes, tvSourceUrl;
     private Chip chipCategory, chipSubcategory, chipStatus, chipTags, chipCompletedDate, chipCreatedAt, chipUpdatedAt;
-    private MaterialButton btnEdit, btnDelete;
+    private MaterialButton btnEdit, btnDelete, btnStremio;
     private MaterialCardView cardFieldValues, cardNotes, cardSource;
     private LinearLayout fieldValuesContainer;
     private ApiService apiService;
@@ -66,6 +66,7 @@ public class EntryDetailActivity extends AppCompatActivity {
         chipUpdatedAt = findViewById(R.id.chipUpdatedAt);
         btnEdit = findViewById(R.id.btnEdit);
         btnDelete = findViewById(R.id.btnDelete);
+        btnStremio = findViewById(R.id.btnStremio);
         MaterialButton btnConnections = findViewById(R.id.btnConnections);
         cardFieldValues = findViewById(R.id.cardFieldValues);
         cardNotes = findViewById(R.id.cardNotes);
@@ -93,6 +94,8 @@ public class EntryDetailActivity extends AppCompatActivity {
             intent.putExtra("entry_id", entryId);
             startActivity(intent);
         });
+
+        btnStremio.setOnClickListener(v -> openStremio());
     }
 
     private void confirmDelete() {
@@ -350,6 +353,40 @@ public class EntryDetailActivity extends AppCompatActivity {
             }
         } catch (Exception ignored) {}
         return isoDate;
+    }
+
+    private void openStremio() {
+        btnStremio.setEnabled(false);
+        btnStremio.setText("Buscando en Stremio...");
+        apiService.getStremioLink(entryId).enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                btnStremio.setEnabled(true);
+                btnStremio.setText("Ver en Stremio");
+                if (response.isSuccessful() && response.body() != null) {
+                    String stremioUrl = (String) response.body().get("stremio_url");
+                    if (stremioUrl != null && !stremioUrl.isEmpty()) {
+                        try {
+                            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(stremioUrl));
+                            startActivity(intent);
+                        } catch (Exception e) {
+                            // Si Stremio no está instalado, abrir web
+                            String webUrl = (String) response.body().get("web_url");
+                            if (webUrl != null) openUrl(webUrl);
+                            else Toast.makeText(EntryDetailActivity.this, "Stremio no está instalado", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                } else {
+                    Toast.makeText(EntryDetailActivity.this, "Esta entrada no tiene enlace a Stremio", Toast.LENGTH_SHORT).show();
+                }
+            }
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                btnStremio.setEnabled(true);
+                btnStremio.setText("Ver en Stremio");
+                Toast.makeText(EntryDetailActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void loadPosterImage(Entry entry) {
